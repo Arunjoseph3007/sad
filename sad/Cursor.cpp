@@ -1,4 +1,17 @@
+#include <string>
+#include <iostream>
 #include "Cursor.h"
+
+std::ostream& operator<<(std::ostream& os, const TextBuffer& tb) {
+	os << "TextBuffer(";
+	for (int i = 0;i < tb.size();i++) {
+		os << "\"" << tb[i] << "\"";
+
+		if (i < tb.size() - 1) os << ", ";
+	}
+	os << ")";
+	return os;
+}
 
 IVec2::IVec2() { x = 0;y = 0; }
 

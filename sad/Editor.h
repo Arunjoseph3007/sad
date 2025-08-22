@@ -2,57 +2,95 @@
 #include <string>
 #include <vector>
 #include "Cursor.h"
+#include "Edit.h"
 
-#define EVENT_LOGGING
-#ifdef EVENT_LOGGING
-#define ELOG() printf(__VA__ARGS__)
-#else
-#define ELOG() ()
-#endif
+typedef std::vector<Edit> History;
+
+const int MAX_HISTORY = 100;
 
 class Editor {
 public:
-    Cursor cursor;
-    TextBuffer buffer;
+	Cursor cursor;
+	TextBuffer buffer;
 
-    Editor();
+	Editor();
+	void debug();
 
-    IVec2 getCursorEnd();
-    IVec2 getGhostEnd();
-    IVec2 getCursorStart();
-    IVec2 getGhostStart();
-    void syncCusrorEnd();
-    void syncCusrorStart();
+	/*
+		Undo system
+		LORD FORGIVE ME FOR I HAVE SINNED, THIS IS VERY INNEFFICEINT
 
-    bool up();
-    bool down();
-    bool left();
-    bool right();
+		This uses basic vector diffing to manage edits.
+		This is very inefficeint because we might be storing entire string
+		even if the diff is only a character.
 
-    void leftWord();
-    void rightWord();
+		We copy and store buffer into oldBuffer on startTransaction
+		and diff and push into history in endTransaction
+		We are using reference counting to detect nested transactions
 
-    void selectUp();
-    void selectDown();
-    void selectLeft();
-    void selectRight();
+		If user is implementing a trasaction make sure that,
+		all the edits must be between startTransaction() and endTransaction()
+	*/
+private:
+	int transactionRefCount = 0;
+	History undoHistory, redoHistory;
+	TextBuffer oldBuffer;
+public:
+	bool startTransaction();
+	bool endTransaction();
+	bool undo();
+	bool redo();
 
-    std::string getSelectionString() const;
-    void emptySelection();
+	/*
+		Cursor system
+		I PERSONALY BELIEVE WE NAILED THIS, FAMOUS LAST WORDS
 
-    void insertBefore(const char c);
-    void insertBefore(const std::string& text);
-    void insertAfter(const char c);
-    void insertAfter(const std::string& text);
-    void charInsertBefore(int ch, bool shift);
+		We have 2 class IVec2(Anchor) and Cursor, but not Selection
+		Anchor: know how to navigate given a buffer, methods like up, down, left & right
+		Cursor: is a combination of 2 Anchors (start & end)
 
-    bool backspace();
-    bool eDelete();
+		When they are the same they behave as cursor
+		When different they behave as Selections
+	*/
+public:
+	IVec2 getCursorEnd();
+	IVec2 getGhostEnd();
+	IVec2 getCursorStart();
+	IVec2 getGhostStart();
+	void syncCusrorEnd();
+	void syncCusrorStart();
 
-    void enter();
+	bool up();
+	bool down();
+	bool left();
+	bool right();
 
-    bool home();
-    bool end();
+	void leftWord();
+	void rightWord();
 
-    void debug();
+	void selectUp();
+	void selectDown();
+	void selectLeft();
+	void selectRight();
+
+	bool home();
+	bool end();
+
+	std::string getSelectionString() const;
+	void emptySelection();
+
+	/*
+		Editing system
+	*/
+public:
+	void insertBefore(const char c);
+	void insertBefore(const std::string& text);
+	void insertAfter(const char c);
+	void insertAfter(const std::string& text);
+	void charInsertBefore(int ch, bool shift);
+
+	bool backspace();
+	bool eDelete();
+
+	void enter();
 };

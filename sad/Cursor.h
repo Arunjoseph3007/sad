@@ -4,6 +4,8 @@
 
 typedef std::vector<std::string> TextBuffer;
 
+std::ostream& operator<<(std::ostream& os, const TextBuffer& obj);
+
 struct IVec2 {
 public:
 	int x, y;

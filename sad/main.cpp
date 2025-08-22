@@ -205,21 +205,6 @@ int main(int, char**) {
 			ImVec2 p = ImGui::GetCursorScreenPos();
 			ImVec2 fSize(2, 20);
 
-			// TODO please draw better
-			// Actual mouse End
-			{
-				IVec2 pos = editor.getCursorStart();
-				ImVec2 start(p.x + pos.x * 10, p.y + pos.y * 24);
-				ImVec2 end(start.x + fSize.x, start.y + fSize.y);
-				drawList->AddRectFilled(start, end, ImColor(0, 255, 0, 100));
-			}
-			// Actual mouse End
-			{
-				IVec2 pos = editor.getCursorEnd();
-				ImVec2 start(p.x + pos.x * 10, p.y + pos.y * 24);
-				ImVec2 end(start.x + fSize.x, start.y + fSize.y);
-				drawList->AddRectFilled(start, end, ImColor(0, 0, 255, 100));
-			}
 			// Ghost Mouse End
 			{
 				IVec2 pos = editor.getGhostEnd();
@@ -227,15 +212,8 @@ int main(int, char**) {
 				ImVec2 end(start.x + fSize.x, start.y + fSize.y);
 				drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
 			}
-			// Ghost Mouse Start
-			{
-				IVec2 pos = editor.getGhostStart();
-				ImVec2 start(p.x + pos.x * 10, p.y + pos.y * 24);
-				ImVec2 end(start.x + fSize.x, start.y + fSize.y);
-				drawList->AddRectFilled(start, end, ImColor(255, 0, 0));
-			}
 
-			auto markSelectionLine = [&editor, &drawList, &p](int y, int sx, int ex) {
+			auto markSelectionLine = [&drawList, &p](int y, int sx, int ex) {
 				const int lineHeight = 24;
 				const int charWidth = 10;
 				ImVec2 lstart(p.x + sx * charWidth, p.y + y * lineHeight);

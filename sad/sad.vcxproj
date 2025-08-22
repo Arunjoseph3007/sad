@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Cursor.cpp" />
+    <ClCompile Include="Edit.cpp" />
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="FileTree.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Edit.h" />
     <ClInclude Include="Cursor.h" />
     <ClInclude Include="Editor.h" />
     <ClInclude Include="FileTree.h" />
