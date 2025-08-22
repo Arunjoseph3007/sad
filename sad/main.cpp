@@ -15,6 +15,9 @@
 #include <chrono>
 #include <unordered_map>
 
+// uncomment this to remove title bar
+//#define NO_TITLE_BAR
+
 static void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
@@ -126,6 +129,61 @@ static bool redo(GLFWwindow* window, Editor& e) {
 	return true;
 }
 
+static void SetupTheme() {}
+
+static void handleTitleBar(GLFWwindow* window) {
+	static double s_xpos = 0, s_ypos = 0;
+	static int w_xsiz = 0, w_ysiz = 0;
+	static int dragState = 0;
+
+	static ImGuiWindowFlags titlebar_flags =
+		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
+		| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+		| ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoScrollbar
+		| ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse;
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+	ImGui::SetNextWindowPos(viewport->WorkPos);
+	ImGui::SetNextWindowSize(ImVec2{ viewport->WorkSize.x, 25.0f });
+	ImGui::SetNextWindowViewport(viewport->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2{ 0.0f, 0.0f });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 40.0f, 2.0f });
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{ 0.01f, 0.01f, 0.01f, 1.0f });
+
+	ImGui::Begin("window-frame-titlebar", nullptr, titlebar_flags);
+	ImGui::PopStyleVar(3);
+	ImGui::PopStyleColor(1);
+	ImGui::SetWindowFontScale(0.75f);
+	ImGui::TextColored(ImVec4{ 1.0f,1.0f,1.0f,1.0f }, "Sad");
+	ImGui::End();
+
+	if (glfwGetMouseButton(window, 0) == GLFW_PRESS && dragState == 0) {
+		glfwGetCursorPos(window, &s_xpos, &s_ypos);
+		glfwGetWindowSize(window, &w_xsiz, &w_ysiz);
+		dragState = 1;
+	}
+	if (glfwGetMouseButton(window, 0) == GLFW_PRESS && dragState == 1) {
+		double c_xpos, c_ypos;
+		int w_xpos, w_ypos;
+		glfwGetCursorPos(window, &c_xpos, &c_ypos);
+		glfwGetWindowPos(window, &w_xpos, &w_ypos);
+		if (
+			s_xpos >= 0 && s_xpos <= ((double)w_xsiz - 170) &&
+			s_ypos >= 0 && s_ypos <= 25) {
+			glfwSetWindowPos(window, w_xpos + (c_xpos - s_xpos), w_ypos + (c_ypos - s_ypos));
+		}
+		if (
+			s_xpos >= ((double)w_xsiz - 15) && s_xpos <= ((double)w_xsiz) &&
+			s_ypos >= ((double)w_ysiz - 15) && s_ypos <= ((double)w_ysiz)) {
+			glfwSetWindowSize(window, w_xsiz + (c_xpos - s_xpos), w_ysiz + (c_ypos - s_ypos));
+		}
+	}
+	if (glfwGetMouseButton(window, 0) == GLFW_RELEASE && dragState == 1) {
+		dragState = 0;
+	}
+}
+
 // Main code
 int main(int, char**) {
 	std::string path = "C:\\Users\\arun.mulakkal\\xlabs\\ramdon";
@@ -136,6 +194,10 @@ int main(int, char**) {
 
 	glfwSetErrorCallback(glfw_error_callback);
 	if (!glfwInit()) return 1;
+
+#ifdef NO_TITLE_BAR
+	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+#endif
 
 	// Create window with graphics context
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "Sad", nullptr, nullptr);
@@ -156,11 +218,13 @@ int main(int, char**) {
 	ImGui::StyleColorsDark();
 
 	// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+	SetupTheme();
 	ImGuiStyle& style = ImGui::GetStyle();
 	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		style.WindowRounding = 0.0f;
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 	}
+
 
 	// Setup Platform/Renderer backends
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -192,6 +256,7 @@ int main(int, char**) {
 	// Main loop
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+
 		if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
 			ImGui_ImplGlfw_Sleep(10);
 			continue;
@@ -203,6 +268,13 @@ int main(int, char**) {
 		ImGui::NewFrame();
 
 		ImGui::DockSpaceOverViewport(1);
+
+
+#ifdef NO_TITLE_BAR
+		handleTitleBar(window);
+#endif // NO_TITLE_BAR
+
+
 		// File tree
 		{
 			ImGui::Begin("FileTree");                          // Create a window called "Hello, world!" and append into it.
