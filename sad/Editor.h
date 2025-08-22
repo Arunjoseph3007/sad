@@ -1,12 +1,12 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <deque>
 #include "Cursor.h"
 #include "Edit.h"
 
-typedef std::vector<Edit> History;
+typedef std::deque<Edit> History;
 
-const int MAX_HISTORY = 100;
+const int MAX_UNDO_HISTORY_SIZE = 100;
 
 class Editor {
 public:

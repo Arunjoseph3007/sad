@@ -61,8 +61,54 @@ Editor::Editor() {
 	this->buffer = { "" };
 }
 
+bool Editor::startTransaction() {
+	if (this->transactionRefCount == 0) {
+		this->oldBuffer = this->buffer;
+		this->transactionRefCount++;
+		return true;
+	}
+	this->transactionRefCount++;
+	return false;
+}
 
+bool Editor::endTransaction() {
+	this->transactionRefCount--;
 
+	if (this->transactionRefCount > 0) return false;
+
+	this->redoHistory.clear();
+
+	Edit ed = diffBuffers(this->oldBuffer, this->buffer);
+	this->undoHistory.push_back(ed);
+	this->oldBuffer.clear();
+
+	while (this->undoHistory.size() > MAX_UNDO_HISTORY_SIZE) {
+		this->undoHistory.pop_front();
+	}
+	return true;
+}
+
+bool Editor::undo() {
+	if (this->undoHistory.empty()) return false;
+
+	Edit ed = this->undoHistory.back();
+	this->undoHistory.pop_back();
+	this->redoHistory.push_back(ed);
+
+	ed.undo(this->buffer);
+	return true;
+}
+
+bool Editor::redo() {
+	if (this->redoHistory.empty()) return false;
+
+	Edit ed = this->redoHistory.back();
+	this->redoHistory.pop_back();
+	this->undoHistory.push_back(ed);
+
+	ed.redo(this->buffer);
+	return true;
+}
 
 IVec2 Editor::getCursorEnd() {
 	return this->cursor.end;
@@ -191,6 +237,8 @@ void Editor::emptySelection() {
 
 
 void Editor::insertBefore(const char c) {
+	this->startTransaction();
+
 	if (this->cursor.isSelection()) {
 		this->emptySelection();
 	}
@@ -202,6 +250,8 @@ void Editor::insertBefore(const char c) {
 
 	this->cursor.end.right(this->buffer);
 	this->cursor.start.right(this->buffer);
+
+	this->endTransaction();
 }
 
 void Editor::insertBefore(const std::string& text) {

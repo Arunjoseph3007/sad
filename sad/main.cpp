@@ -98,6 +98,14 @@ static bool copyLineUp(GLFWwindow* window, Editor& e) {
 	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[e.cursor.end.y]);
 	return true;
 }
+static bool undo(GLFWwindow* window, Editor& e) {
+	e.undo();
+	return true;
+}
+static bool redo(GLFWwindow* window, Editor& e) {
+	e.redo();
+	return true;
+}
 
 // Main code
 int main(int, char**) {
@@ -158,6 +166,8 @@ int main(int, char**) {
 		KeyBinding(ImGuiKey_UpArrow, Alt + Shift, copyLineUp),
 		KeyBinding(ImGuiKey_DownArrow, Alt + Shift, copyLineDown),
 		KeyBinding(ImGuiKey_A, Ctrl, selectAll),
+		KeyBinding(ImGuiKey_Z, Ctrl, undo),
+		KeyBinding(ImGuiKey_Y, Ctrl, redo),
 	};
 
 	// Main loop
