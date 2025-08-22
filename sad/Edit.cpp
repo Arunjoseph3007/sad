@@ -1,6 +1,26 @@
 #include "Edit.h"
 #include <iostream>
 
+
+Edit Edit::diffBuffers(const TextBuffer& a, const TextBuffer& b) {
+	if (a == b) return Edit(0, {}, {});
+
+	size_t start = 0;
+	while (start < a.size() && start < b.size() && a[start] == b[start]) {
+		start++;
+	}
+
+	size_t endA = a.size(), endB = b.size();
+	while (endA > start && endB > start && a[endA - 1] == b[endB - 1]) {
+		endA--;
+		endB--;
+	}
+
+	TextBuffer plus(b.begin() + start, b.begin() + endB);
+	TextBuffer minus(a.begin() + start, a.begin() + endA);
+	return Edit(start, plus, minus);
+}
+
 void Edit::undo(TextBuffer& buffer) const {
 	buffer.erase(buffer.begin() + this->start, buffer.begin() + this->start + this->plus.size());
 
@@ -20,13 +40,13 @@ void Edit::redo(TextBuffer& buffer) const {
 std::ostream& operator<<(std::ostream& os, const Edit& ed) {
 	os << "Edit(start: " << ed.start << ", plus: {";
 
-	for (int i = 0;i < ed.plus.size();i++) { 
-		os << "\"" << ed.plus[i] << "\""; 
+	for (int i = 0;i < ed.plus.size();i++) {
+		os << "\"" << ed.plus[i] << "\"";
 
 		if (i < ed.plus.size() - 1) os << ", ";
 	}
 	os << "}, minus: {";
-	
+
 	for (int i = 0;i < ed.minus.size();i++) {
 		os << "\"" << ed.minus[i] << "\"";
 

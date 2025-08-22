@@ -21,11 +21,13 @@ static void glfw_error_callback(int error, const char* description) {
 
 // Keybindings
 static bool pasteTextFromClipBoard(GLFWwindow* window, Editor& e) {
+	e.startTransaction();
 	if (e.cursor.isSelection()) {
 		e.emptySelection();
 	}
 	const char* cData = glfwGetClipboardString(window);
 	e.insertBefore(std::string(cData));
+	e.endTransaction();
 	return true;
 }
 static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
@@ -39,6 +41,7 @@ static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
+	e.startTransaction();
 	if (e.cursor.isSelection()) {
 		glfwSetClipboardString(window, e.getSelectionString().c_str());
 		e.emptySelection();
@@ -49,6 +52,7 @@ static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
 		glfwSetClipboardString(window, e.buffer[lineNo].c_str());
 		e.buffer.erase(e.buffer.begin() + lineNo);
 	}
+	e.endTransaction();
 	return true;
 }
 static bool selectAll(GLFWwindow* window, Editor& e) {
@@ -70,32 +74,47 @@ static bool moveRightWord(GLFWwindow* window, Editor& e) {
 }
 
 static bool moveLineUp(GLFWwindow* window, Editor& e) {
-	int y = e.cursor.end.y;
+	e.startTransaction();
+	int y = e.cursor.selectionStart(e.buffer).y;
 	if (y > 0) {
 		std::string t = e.buffer[y - 1];
 		e.buffer[y - 1] = e.buffer[y];
 		e.buffer[y] = t;
 		e.up();
 	}
+
+	e.endTransaction();
 	return true;
 }
 static bool moveLineDown(GLFWwindow* window, Editor& e) {
-	int y = e.cursor.end.y;
+	e.startTransaction();
+	int y = e.cursor.selectionStart(e.buffer).y;
 	if (y < e.buffer.size() - 1) {
 		std::string t = e.buffer[y + 1];
 		e.buffer[y + 1] = e.buffer[y];
 		e.buffer[y] = t;
 		e.down();
 	}
+	e.endTransaction();
 	return true;
 }
 static bool copyLineDown(GLFWwindow* window, Editor& e) {
-	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[e.cursor.end.y]);
+	e.startTransaction();
+
+	int y = e.cursor.selectionStart(e.buffer).y;
+	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[y]);
 	e.down();
+
+	e.endTransaction();
 	return true;
 }
 static bool copyLineUp(GLFWwindow* window, Editor& e) {
-	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[e.cursor.end.y]);
+	e.startTransaction();
+
+	int y = e.cursor.selectionStart(e.buffer).y;
+	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[y]);
+
+	e.endTransaction();
 	return true;
 }
 static bool undo(GLFWwindow* window, Editor& e) {
@@ -206,6 +225,31 @@ int main(int, char**) {
 
 			ImGui::End();
 		}
+
+
+		// Debug
+		{
+			ImGui::Begin("Debug");
+
+			ImGui::Text("Ref count %d", editor.transactionRefCount);
+			ImGui::Text("Undo stack %d", editor.undoHistory.size());
+			ImGui::Text("Redo stack %d", editor.redoHistory.size());
+			ImGui::Text("Num Lines %d", editor.buffer.size());
+			if (editor.cursor.isSelection()) {
+				auto gps = editor.cursor.selectionStart(editor.buffer);
+				ImGui::Text("Selection Start (%d, %d)", gps.y, gps.x);
+				auto gpe = editor.cursor.selectionEnd(editor.buffer);
+				ImGui::Text("Selection End (%d, %d)", gpe.y, gpe.x);
+			}
+			else {
+				auto gp = editor.getGhostEnd();
+				ImGui::Text("Cursor (%d, %d)", gp.y, gp.x);
+			}
+
+
+			ImGui::End();
+		}
+
 
 		// Editor
 		{
@@ -385,6 +429,8 @@ int main(int, char**) {
 
 			ImGui::End();
 		}
+
+
 
 		// Rendering
 		ImGui::Render();

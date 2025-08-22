@@ -31,7 +31,8 @@ public:
 		If user is implementing a trasaction make sure that,
 		all the edits must be between startTransaction() and endTransaction()
 	*/
-private:
+	// TODO make private
+public:
 	int transactionRefCount = 0;
 	History undoHistory, redoHistory;
 	TextBuffer oldBuffer;

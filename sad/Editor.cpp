@@ -20,7 +20,7 @@ static CharType getCharType(const char& c) {
 	return CharType::SpecialChar;
 }
 
-static inline TextBuffer splitString(const std::string& text, const char& delimiter = '\n') {
+static TextBuffer splitString(const std::string& text, const char& delimiter = '\n') {
 	TextBuffer result;
 	std::string segment;
 	for (size_t i = 0; i < text.size(); i++) {
@@ -34,22 +34,6 @@ static inline TextBuffer splitString(const std::string& text, const char& delimi
 	result.push_back(segment);
 
 	return result;
-}
-
-static Edit diffBuffers(const TextBuffer& a, const TextBuffer& b) {
-	if (a == b) return Edit(0, {}, {});
-
-	size_t start, offset;
-	for (start = 0;start < a.size() && start < b.size();start++) {
-		if (a[start] != b[start]) break;
-	}
-
-	for (offset = 0;offset < a.size() && offset < b.size();offset++) {
-		if (a[a.size() - 1 - offset] != b[b.size() - 1 - offset]) break;
-	}
-	TextBuffer plus(b.begin() + start, b.end() - offset);
-	TextBuffer minus(a.begin() + start, a.end() - offset);
-	return Edit(start, plus, minus);
 }
 
 static void debugCur(Cursor c) {
@@ -78,7 +62,7 @@ bool Editor::endTransaction() {
 
 	this->redoHistory.clear();
 
-	Edit ed = diffBuffers(this->oldBuffer, this->buffer);
+	Edit ed = Edit::diffBuffers(this->oldBuffer, this->buffer);
 	this->undoHistory.push_back(ed);
 	this->oldBuffer.clear();
 
@@ -255,6 +239,8 @@ void Editor::insertBefore(const char c) {
 }
 
 void Editor::insertBefore(const std::string& text) {
+	this->startTransaction();
+
 	TextBuffer segments = splitString(text);
 	for (size_t i = 0;i < segments.size();i++) {
 		for (const char& c : segments[i]) {
@@ -262,9 +248,13 @@ void Editor::insertBefore(const std::string& text) {
 		}
 		if (i != segments.size() - 1) this->enter();
 	}
+
+	this->endTransaction();
 }
 
 void Editor::insertAfter(const char c) {
+	this->startTransaction();
+
 	if (this->cursor.isSelection()) {
 		this->emptySelection();
 	}
@@ -272,9 +262,13 @@ void Editor::insertAfter(const char c) {
 	IVec2 gPos = this->getGhostEnd();
 
 	this->buffer[gPos.y].insert(gPos.x, 1, c);
+
+	this->endTransaction();
 }
 
 void Editor::insertAfter(const std::string& text) {
+	this->startTransaction();
+
 	TextBuffer segments = splitString(text);
 	for (const std::string segment : segments) {
 		for (const char& c : segment) {
@@ -282,6 +276,8 @@ void Editor::insertAfter(const std::string& text) {
 		}
 		this->enter();
 	}
+
+	this->endTransaction();
 }
 
 std::unordered_map<ImGuiKey, std::pair<char, char>> SpecialKeyMapping = {
@@ -317,15 +313,20 @@ std::unordered_map<char, char> ClosablesChars = {
 	{'{', '}'},
 };
 void Editor::charInsertBefore(int ch, bool shift) {
-	//assert(ch >= ImGuiKey_Apostrophe && ch <= ImGuiKey_GraveAccent && "Invalid character");
+	this->startTransaction();
 
 	std::pair<char, char> cPair = SpecialKeyMapping[(ImGuiKey)ch];
 	char c = shift ? cPair.second : cPair.first;
 	this->insertBefore(c);
 
-	if (ClosablesChars.find(c) == ClosablesChars.end()) return;
+	if (ClosablesChars.find(c) == ClosablesChars.end()) {
+		this->endTransaction();
+		return;
+	}
 
 	this->insertAfter(ClosablesChars[c]);
+
+	this->endTransaction();
 }
 
 // TODO remove closing brackets/quotes/braces... if empty
@@ -339,13 +340,18 @@ bool Editor::backspace() {
 	this->syncCusrorEnd();
 
 	if (gPos.x > 0) {
+		this->startTransaction();
+
 		this->cursor.end.x--;
 		this->cursor.start.x--;
 		this->buffer[gPos.y].erase(gPos.x - 1, 1);
 
+		this->endTransaction();
 		return true;
 	}
 	else if (gPos.y > 0) {
+		this->startTransaction();
+
 		this->cursor.end.y--;
 		this->cursor.start.y--;
 		this->cursor.end.x = this->buffer[this->cursor.end.y].size();
@@ -353,6 +359,8 @@ bool Editor::backspace() {
 
 		this->buffer[this->cursor.end.y] += this->buffer[this->cursor.end.y + 1];
 		this->buffer.erase(this->buffer.begin() + this->cursor.end.y + 1);
+
+		this->endTransaction();
 		return true;
 	}
 	return false;
@@ -367,19 +375,28 @@ bool Editor::eDelete() {
 	this->syncCusrorEnd();
 
 	if (gPos.x < this->buffer[gPos.y].size()) {
+		this->startTransaction();
+
 		this->buffer[gPos.y].erase(gPos.x, 1);
 
+		this->endTransaction();
 		return true;
 	}
 	else if (gPos.y < this->buffer.size() - 1) {
+		this->startTransaction();
+
 		this->buffer[this->cursor.end.y] += this->buffer[this->cursor.end.y + 1];
 		this->buffer.erase(this->buffer.begin() + this->cursor.end.y + 1);
+		
+		this->endTransaction();
 		return true;
 	}
 	return false;
 }
 
 void Editor::enter() {
+	this->startTransaction();
+
 	if (this->cursor.isSelection()) {
 		this->emptySelection();
 	}
@@ -395,6 +412,8 @@ void Editor::enter() {
 	this->cursor.start.y++;
 	this->cursor.end.x = 0;
 	this->cursor.start.x = 0;
+
+	this->endTransaction();
 }
 
 bool Editor::home() {

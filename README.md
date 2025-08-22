@@ -11,7 +11,10 @@ We are at a very basic stage so lower you expectations
 
 ## TODO
 - [ ] Multi cursor
-- [ ] Undo/Redo system
+- [-] Undo/Redo system
+  - [ ] Also handle mouse psotions somehow?
+  - [ ] We are using line diff, maybe more specific diff?
+  - [ ] A better way of start/end transactions, dont want to write it everywhere
 - [ ] Selecting by clicking/dragging
 - [ ] Actually save the file
 - [ ] Edit multiple files simultaneously (optional)

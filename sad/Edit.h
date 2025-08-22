@@ -6,6 +6,8 @@ typedef std::vector<std::string> TextBuffer;
 
 struct Edit {
 public:
+	static Edit diffBuffers(const TextBuffer& a, const TextBuffer& b);
+
 	int start;
 	TextBuffer plus, minus;
 

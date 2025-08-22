@@ -25,13 +25,13 @@ bool IVec2::operator==(const IVec2& that) const {
 }
 
 IVec2 IVec2::getGhotsPos(TextBuffer buffer)  const {
-	int y = std::min((int)buffer.size(), this->y);
+	int y = std::min((int)buffer.size() - 1, this->y);
 	int x = std::min((int)buffer[y].size(), this->x);
 	return { x, y };
 }
 
 void IVec2::syncCursor(TextBuffer buffer) {
-	this->y = std::min((int)buffer.size(), this->y);
+	this->y = std::min((int)buffer.size() - 1, this->y);
 	this->x = std::min((int)buffer[y].size(), this->x);
 }
 
