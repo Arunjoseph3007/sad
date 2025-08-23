@@ -36,6 +36,7 @@ public:
 	int transactionRefCount = 0;
 	History undoHistory, redoHistory;
 	TextBuffer oldBuffer;
+	Cursor oldCursor;
 public:
 	bool startTransaction();
 	bool endTransaction();
@@ -91,7 +92,9 @@ public:
 	void charInsertBefore(int ch, bool shift);
 
 	bool backspace();
-	bool eDelete();
+	bool backspaceWord();
+	bool del();
+	bool delWord();
 
 	void enter();
 };

@@ -42,11 +42,9 @@ char IVec2::getPrev(TextBuffer buffer) const {
 	return buffer[y][x - 1];
 }
 char IVec2::getNext(TextBuffer buffer) const {
-	if (this->y == buffer.size() - 1) {
-		if (this->x == buffer[this->y].size() - 1) return 0;
+	if (this->y == buffer.size() - 1 && this->x == buffer[this->y].size()) return 0;
+	if (this->x == buffer[this->y].size()) return '\n';
 
-		return '\n';
-	}
 	return buffer[y][x];
 }
 

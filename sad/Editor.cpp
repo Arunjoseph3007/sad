@@ -48,6 +48,7 @@ Editor::Editor() {
 bool Editor::startTransaction() {
 	if (this->transactionRefCount == 0) {
 		this->oldBuffer = this->buffer;
+		this->oldCursor = this->cursor;
 		this->transactionRefCount++;
 		return true;
 	}
@@ -63,8 +64,11 @@ bool Editor::endTransaction() {
 	this->redoHistory.clear();
 
 	Edit ed = Edit::diffBuffers(this->oldBuffer, this->buffer);
+	ed.startCursor = this->oldCursor;
+	ed.endCursor = this->cursor;
 	this->undoHistory.push_back(ed);
 	this->oldBuffer.clear();
+	this->oldCursor = {};
 
 	while (this->undoHistory.size() > MAX_UNDO_HISTORY_SIZE) {
 		this->undoHistory.pop_front();
@@ -77,9 +81,13 @@ bool Editor::undo() {
 
 	Edit ed = this->undoHistory.back();
 	this->undoHistory.pop_back();
+	// I dont think we need to check size here, 
+	// it cannot grow longer than the undoHistory
 	this->redoHistory.push_back(ed);
 
 	ed.undo(this->buffer);
+	this->cursor = ed.startCursor;
+
 	return true;
 }
 
@@ -91,6 +99,7 @@ bool Editor::redo() {
 	this->undoHistory.push_back(ed);
 
 	ed.redo(this->buffer);
+	this->cursor = ed.endCursor;
 	return true;
 }
 
@@ -204,6 +213,8 @@ std::string Editor::getSelectionString() const {
 }
 
 void Editor::emptySelection() {
+	this->startTransaction();
+
 	IVec2 selStart = this->cursor.selectionStart(this->buffer);
 	IVec2 selEnd = this->cursor.selectionEnd(this->buffer);
 
@@ -217,6 +228,8 @@ void Editor::emptySelection() {
 		this->buffer[selStart.y] += this->buffer[selEnd.y].substr(selEnd.x);
 		this->buffer.erase(this->buffer.begin() + selStart.y + 1, this->buffer.begin() + selEnd.y + 1);
 	}
+
+	this->endTransaction();
 }
 
 
@@ -366,7 +379,25 @@ bool Editor::backspace() {
 	return false;
 }
 
-bool Editor::eDelete() {
+bool Editor::backspaceWord() {
+	if (this->cursor.isSelection()) {
+		this->emptySelection();
+		return true;
+	}
+
+	this->startTransaction();
+
+	if (!this->backspace()) return false;
+
+	while (getCharType(this->cursor.start.getPrev(this->buffer)) == CharType::Alphabet) {
+		if (!this->backspace()) break;
+	}
+
+	this->endTransaction();
+	return true;
+}
+
+bool Editor::del() {
 	if (this->cursor.isSelection()) {
 		this->emptySelection();
 		return true;
@@ -387,11 +418,29 @@ bool Editor::eDelete() {
 
 		this->buffer[this->cursor.end.y] += this->buffer[this->cursor.end.y + 1];
 		this->buffer.erase(this->buffer.begin() + this->cursor.end.y + 1);
-		
+
 		this->endTransaction();
 		return true;
 	}
 	return false;
+}
+
+bool Editor::delWord() {
+	if (this->cursor.isSelection()) {
+		this->emptySelection();
+		return true;
+	}
+
+	this->startTransaction();
+
+	if (!this->del()) return false;
+
+	while (getCharType(this->cursor.start.getNext(this->buffer)) == CharType::Alphabet) {
+		if (!this->del()) break;
+	}
+
+	this->endTransaction();
+	return true;
 }
 
 void Editor::enter() {

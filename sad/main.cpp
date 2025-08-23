@@ -128,6 +128,14 @@ static bool redo(GLFWwindow* window, Editor& e) {
 	e.redo();
 	return true;
 }
+static bool backspaceWord(GLFWwindow* window, Editor& e) {
+	e.backspaceWord();
+	return true;
+}
+static bool delWord(GLFWwindow* window, Editor& e) {
+	e.delWord();
+	return true;
+}
 
 static void SetupTheme() {}
 
@@ -198,6 +206,7 @@ int main(int, char**) {
 #ifdef NO_TITLE_BAR
 	glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 #endif
+	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 
 	// Create window with graphics context
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "Sad", nullptr, nullptr);
@@ -251,6 +260,8 @@ int main(int, char**) {
 		KeyBinding(ImGuiKey_A, Ctrl, selectAll),
 		KeyBinding(ImGuiKey_Z, Ctrl, undo),
 		KeyBinding(ImGuiKey_Y, Ctrl, redo),
+		KeyBinding(ImGuiKey_Backspace, Ctrl, backspaceWord),
+		KeyBinding(ImGuiKey_Delete, Ctrl, delWord),
 	};
 
 	// Main loop
@@ -454,7 +465,8 @@ int main(int, char**) {
 					editor.backspace();
 				}
 				else if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-					std::cout << "Delete\n";editor.eDelete();
+					std::cout << "Delete\n";
+					editor.del();
 				}
 				// text input
 				else {

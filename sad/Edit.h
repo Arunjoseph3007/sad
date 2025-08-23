@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include "Cursor.h"
 
 typedef std::vector<std::string> TextBuffer;
 
@@ -10,6 +11,7 @@ public:
 
 	int start;
 	TextBuffer plus, minus;
+	Cursor startCursor, endCursor;
 
 	Edit(int start, TextBuffer plus, TextBuffer minus) : start(start), plus(plus), minus(minus) {}
 

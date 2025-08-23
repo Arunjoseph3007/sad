@@ -8,11 +8,12 @@ We are at a very basic stage so lower you expectations
 - Simple selection
 - Basic Keybindings system
 - Cut/Copy/Paste
+- Cursor position aware Undo/Redo
 
 ## TODO
 - [ ] Multi cursor
 - [-] Undo/Redo system
-  - [ ] Also handle mouse psotions somehow?
+  - [-] Also handle mouse postions somehow?
   - [ ] We are using line diff, maybe more specific diff?
   - [ ] A better way of start/end transactions, dont want to write it everywhere
 - [ ] Selecting by clicking/dragging
