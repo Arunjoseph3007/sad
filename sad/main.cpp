@@ -246,6 +246,7 @@ int main(int, char**) {
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
+	int lineNumberMode = 0;
 	// TODO load this from config file
 	KeyBindings bindings = {
 		KeyBinding(ImGuiKey_V, Ctrl, pasteTextFromClipBoard),
@@ -309,7 +310,6 @@ int main(int, char**) {
 			ImGui::End();
 		}
 
-
 		// Debug
 		{
 			ImGui::Begin("Debug");
@@ -333,57 +333,101 @@ int main(int, char**) {
 			ImGui::End();
 		}
 
+		// Command Pallete
+		{
+			ImGui::Begin("Command", nullptr);
+
+			char commandInputBuf[256] = "";
+			if (ImGui::InputText("##Command", commandInputBuf, IM_ARRAYSIZE(commandInputBuf), ImGuiInputTextFlags_EnterReturnsTrue)) {
+				// command submitted
+				if (strcmp(commandInputBuf, "toggleLineNoMode") == 0) {
+					lineNumberMode = (lineNumberMode + 1) % 2;
+				}
+			}
+
+			ImGui::End();
+		}
 
 		// Editor
 		{
 			ImGui::Begin("Editor");
+			int lineNumberBarSize = 40;
 
-			ImDrawList* drawList = ImGui::GetWindowDrawList();
-			ImVec2 p = ImGui::GetCursorScreenPos();
-			ImVec2 fSize(2, 20);
+			if (ImGui::BeginTable("editor", 2)) {
+				ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 2);
+				ImGui::TableSetupColumn("lineNo", ImGuiTableColumnFlags_WidthFixed, lineNumberBarSize);
+				ImGui::TableSetupColumn("textLine");
 
-			// Ghost Mouse End
-			{
-				IVec2 pos = editor.getGhostEnd();
-				ImVec2 start(p.x + pos.x * 10, p.y + pos.y * 24);
-				ImVec2 end(start.x + fSize.x, start.y + fSize.y);
-				drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
-			}
+				ImDrawList* drawList = ImGui::GetWindowDrawList();
+				ImVec2 p = ImGui::GetCursorScreenPos();
+				p.x += lineNumberBarSize;
+				p.x += 2 * style.FramePadding.x;
+				ImVec2 fSize(2, 20);
 
-			auto markSelectionLine = [&drawList, &p](int y, int sx, int ex) {
-				const int lineHeight = 24;
-				const int charWidth = 10;
-				ImVec2 lstart(p.x + sx * charWidth, p.y + y * lineHeight);
-				ImVec2 lend(p.x + ex * charWidth, lstart.y + lineHeight);
-				ImColor selCol = ImColor(1.0f, 1.0f, 1.0f, 0.3f);
-
-				drawList->AddRectFilled(lstart, lend, selCol);
-				};
-
-			if (editor.cursor.isSelection()) {
-				IVec2 st = editor.cursor.selectionStart(editor.buffer);
-				IVec2 ed = editor.cursor.selectionEnd(editor.buffer);
-
-				int xmin = st.x, xmax = ed.x;
-				int ymin = st.y, ymax = ed.y;
-
-				if (ymin == ymax) {
-					markSelectionLine(ymax, xmin, xmax);
+				// Ghost Mouse End
+				{
+					IVec2 pos = editor.getGhostEnd();
+					ImVec2 start(p.x + pos.x * 10, p.y + pos.y * 24);
+					ImVec2 end(start.x + fSize.x, start.y + fSize.y);
+					drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
 				}
-				else {
-					markSelectionLine(ymin, xmin, editor.buffer[ymin].size());
-					for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size());
-					markSelectionLine(ymax, 0, xmax);
+
+				auto markSelectionLine = [&drawList, &p](int y, int sx, int ex) {
+					const int lineHeight = 24;
+					const int charWidth = 10;
+					ImVec2 lstart(p.x + sx * charWidth, p.y + y * lineHeight);
+					ImVec2 lend(p.x + ex * charWidth, lstart.y + lineHeight);
+					ImColor selCol = ImColor(1.0f, 1.0f, 1.0f, 0.3f);
+
+					drawList->AddRectFilled(lstart, lend, selCol);
+					};
+
+				if (editor.cursor.isSelection()) {
+					IVec2 st = editor.cursor.selectionStart(editor.buffer);
+					IVec2 ed = editor.cursor.selectionEnd(editor.buffer);
+
+					int xmin = st.x, xmax = ed.x;
+					int ymin = st.y, ymax = ed.y;
+
+					if (ymin == ymax) {
+						markSelectionLine(ymax, xmin, xmax);
+					}
+					else {
+						markSelectionLine(ymin, xmin, editor.buffer[ymin].size());
+						for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size());
+						markSelectionLine(ymax, 0, xmax);
+					}
 				}
-			}
 
 
+				for (int i = 0;i < editor.buffer.size();i++) {
+					ImGui::TableNextRow();
 
-			for (int i = 0;i < editor.buffer.size();i++) {
-				char lineNumber[10];
-				sprintf_s(lineNumber, "%d", i + 1);
+					ImGui::TableNextColumn();
+					float opacity = i == editor.cursor.end.y ? 1.0 : 0.4;
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 1, opacity));
 
-				ImGui::TextUnformatted(editor.buffer[i].c_str());
+					int lineNumber = 0;
+					if (lineNumberMode == 0) {
+						lineNumber = i + 1;
+					}
+					else if (lineNumberMode == 1) {
+						if (i != editor.cursor.end.y) {
+							lineNumber = std::abs(i - editor.cursor.end.y);
+						}
+						else {
+							lineNumber = i + 1;
+						}
+					}
+					ImGui::Text("%d", lineNumber);
+					ImGui::PopStyleColor();
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(editor.buffer[i].c_str());
+				}
+
+				ImGui::PopStyleVar();
+				ImGui::EndTable();
 			}
 
 			// Event handling

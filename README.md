@@ -11,12 +11,22 @@ We are at a very basic stage so lower you expectations
 - Cursor position aware Undo/Redo
 
 ## TODO
-- [ ] Multi cursor
-- [-] Undo/Redo system
-  - [-] Also handle mouse postions somehow?
-  - [ ] We are using line diff, maybe more specific diff?
-  - [ ] A better way of start/end transactions, dont want to write it everywhere
-- [ ] Selecting by clicking/dragging
-- [ ] Actually save the file
-- [ ] Edit multiple files simultaneously (optional)
-- [ ] Better UI styling
+- Multi cursor
+- Undo/Redo system
+  - We are using line diff, maybe more specific diff?
+  - A better way of start/end transactions, dont want to write it everywhere
+- Selecting by clicking/dragging
+- Actually save the file
+- Edit multiple files simultaneously (optional)
+- Better UI styling
+- fix alignment issue due to `\r \n \t`
+- Text wrapping
+- Handle gigantic files
+- Very slow pasting
+- Handle line number better
+- Command system
+- Syntax highlighting
+  - Preferably based on active mode
+
+## Reference
+- [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)

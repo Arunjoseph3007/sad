@@ -252,14 +252,26 @@ void Editor::insertBefore(const char c) {
 }
 
 void Editor::insertBefore(const std::string& text) {
-	this->startTransaction();
-
 	TextBuffer segments = splitString(text);
-	for (size_t i = 0;i < segments.size();i++) {
-		for (const char& c : segments[i]) {
-			this->insertBefore(c);
+	if (segments.size() == 0) return;
+
+	this->startTransaction();
+	for (int i = 0;i < segments[0].size();i++) {
+		this->insertBefore(segments[0][i]);
+	}
+
+	if (segments.size() > 1) this->enter();
+
+	for (int i = 1;i < segments.size() - 1;i++) {
+		this->buffer.insert(this->buffer.begin() + this->cursor.end.y, segments[i]);
+		this->end();
+		this->down();
+	}
+
+	if (segments.size() > 1) {
+		for (int i = 0;i < segments[segments.size() - 1].size();i++) {
+			this->insertBefore(segments[segments.size() - 1][i]);
 		}
-		if (i != segments.size() - 1) this->enter();
 	}
 
 	this->endTransaction();
