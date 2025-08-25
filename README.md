@@ -22,7 +22,6 @@ We are at a very basic stage so lower you expectations
 - fix alignment issue due to `\r \n \t`
 - Text wrapping
 - Handle gigantic files
-- Very slow pasting
 - Handle line number better
 - Command system
 - Syntax highlighting

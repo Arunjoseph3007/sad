@@ -43,6 +43,8 @@ static void debugCur(Cursor c) {
 Editor::Editor() {
 	this->cursor = Cursor(0, 0);
 	this->buffer = { "" };
+
+	this->buffer.reserve(1024);
 }
 
 bool Editor::startTransaction() {

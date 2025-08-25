@@ -217,7 +217,7 @@ int main(int, char**) {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
@@ -247,6 +247,7 @@ int main(int, char**) {
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
 	int lineNumberMode = 0;
+	float scroll_y = 0.0f;
 	// TODO load this from config file
 	KeyBindings bindings = {
 		KeyBinding(ImGuiKey_V, Ctrl, pasteTextFromClipBoard),
@@ -350,7 +351,16 @@ int main(int, char**) {
 
 		// Editor
 		{
+			// prevent scroll on arrow key
+			bool isKeyScrolling = ImGui::IsKeyDown(ImGuiKey_DownArrow) || ImGui::IsKeyDown(ImGuiKey_UpArrow);
+			if (isKeyScrolling) {
+				ImGui::SetNextWindowScroll({ ImGui::GetScrollX(), scroll_y });
+			}
+
 			ImGui::Begin("Editor");
+			if (!isKeyScrolling) {
+				scroll_y = ImGui::GetScrollY();
+			}
 			int lineNumberBarSize = 40;
 
 			if (ImGui::BeginTable("editor", 2)) {
