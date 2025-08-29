@@ -6,8 +6,10 @@
 #include "FileTree.h"
 #include "Editor.h"
 #include "KeyBindings.h"
+#include "Grammar.h"
 
 #include <stdio.h>
+#include <regex>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -190,6 +192,25 @@ static void handleTitleBar(GLFWwindow* window) {
 	if (glfwGetMouseButton(window, 0) == GLFW_RELEASE && dragState == 1) {
 		dragState = 0;
 	}
+}
+
+int grammarMain() {
+	auto grammar = simpleJsGrammar();
+	std::string input(R"(
+		const height="strinjdhdjsdhdkhfgheght";
+		const width = 500;
+
+		if (width > height) {
+			console.log({hey: "hello"});
+		}
+	)");
+	auto matches = grammar.parseString(input);
+
+	for (auto m : matches) {
+		auto s = input.substr(m.start, m.end - m.start);
+		std::cout << m << ": " << s << std::endl;
+	}
+	return 0;
 }
 
 // Main code
@@ -404,7 +425,7 @@ int main(int, char**) {
 					}
 					else {
 						markSelectionLine(ymin, xmin, editor.buffer[ymin].size());
-						for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size());
+						for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
 						markSelectionLine(ymax, 0, xmax);
 					}
 				}
