@@ -357,7 +357,15 @@ int main(int, char**) {
 
 		// Command Pallete
 		{
-			ImGui::Begin("Command", nullptr);
+			ImGui::Begin("Command");
+			// on enter return focus back to editor, but for next frame
+			// TODO this seems like a hack, fix it
+			static int shoudlFocusEditor = false;
+			if (ImGui::IsWindowFocused() && shoudlFocusEditor) {
+				std::cout << "focusing editor\n";
+				ImGui::SetWindowFocus("Editor");
+				shoudlFocusEditor = false;
+			}
 
 			char commandInputBuf[256] = "";
 			if (ImGui::InputText("##Command", commandInputBuf, IM_ARRAYSIZE(commandInputBuf), ImGuiInputTextFlags_EnterReturnsTrue)) {
@@ -365,6 +373,13 @@ int main(int, char**) {
 				if (strcmp(commandInputBuf, "toggleLineNoMode") == 0) {
 					lineNumberMode = (lineNumberMode + 1) % 2;
 				}
+
+				shoudlFocusEditor = true;
+			}
+
+			// part of above hack
+			if (ImGui::IsWindowFocused() and !shoudlFocusEditor) {
+				ImGui::SetKeyboardFocusHere(-1);
 			}
 
 			ImGui::End();
@@ -477,9 +492,11 @@ int main(int, char**) {
 					}
 				}
 				bool shiftDown = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
+				bool ctrlDown = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
 
 				if (handled) {}
 				else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+					// TODO rework these using keybindings, only single keys should be here
 					if (shiftDown) {
 						std::cout << "SelectLeft\n";
 						editor.selectLeft();
@@ -542,6 +559,10 @@ int main(int, char**) {
 				else if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
 					std::cout << "Delete\n";
 					editor.del();
+				}
+				else if (ctrlDown && ImGui::IsKeyPressed(ImGuiKey_P)) {
+					std::cout << "Focuscommand pallete\n";
+					ImGui::SetWindowFocus("Command");
 				}
 				// text input
 				else {
