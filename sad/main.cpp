@@ -141,6 +141,23 @@ static bool delWord(GLFWwindow* window, Editor& e) {
 
 static void SetupTheme() {}
 
+static TextBuffer tokenize(const std::string& text) {
+	TextBuffer result;
+	std::string segment;
+	for (size_t i = 0; i < text.size(); i++) {
+		if (text[i] == ' ') {
+			result.push_back(segment);
+			segment.clear();
+			while (text[i + 1] == ' ')i++;
+			continue;
+		}
+		segment += text[i];
+	}
+	result.push_back(segment);
+
+	return result;
+}
+
 static void handleTitleBar(GLFWwindow* window) {
 	static double s_xpos = 0, s_ypos = 0;
 	static int w_xsiz = 0, w_ysiz = 0;
@@ -370,11 +387,30 @@ int main(int, char**) {
 			char commandInputBuf[256] = "";
 			if (ImGui::InputText("##Command", commandInputBuf, IM_ARRAYSIZE(commandInputBuf), ImGuiInputTextFlags_EnterReturnsTrue)) {
 				// command submitted
-				if (strcmp(commandInputBuf, "toggleLineNoMode") == 0) {
-					lineNumberMode = (lineNumberMode + 1) % 2;
-				}
+				std::vector<std::string> tokens = tokenize(commandInputBuf);
+				if (tokens.size() > 0) {
+					int repeat = 1;
+					std::string command = tokens[0];
+					if (tokens.size() == 2) {
+						try {
+							repeat = std::stoi(tokens[0]);
+						}
+						catch (const std::invalid_argument& e) {
+							std::cerr << "Error converting string: " << e.what() << std::endl;
+						}
 
-				shoudlFocusEditor = true;
+						command = tokens[1];
+					}
+					for (int i = 0;i < repeat;i++) {
+						if (command == "toggleLineNoMode") lineNumberMode = (lineNumberMode + 1) % 2;
+						else if (command == "up") editor.up();
+						else if (command == "down") editor.down();
+						else if (command == "left") editor.left();
+						else if (command == "right") editor.right();
+					}
+
+					shoudlFocusEditor = true;
+				}
 			}
 
 			// part of above hack
@@ -408,7 +444,7 @@ int main(int, char**) {
 				ImVec2 p = ImGui::GetCursorScreenPos();
 				p.x += lineNumberBarSize;
 				p.x += 2 * style.FramePadding.x;
-				ImVec2 fSize(2, 20);
+				ImVec2 fSize(2, 24);
 
 				// Ghost Mouse End
 				{
@@ -439,7 +475,7 @@ int main(int, char**) {
 						markSelectionLine(ymax, xmin, xmax);
 					}
 					else {
-						markSelectionLine(ymin, xmin, editor.buffer[ymin].size());
+						markSelectionLine(ymin, xmin, editor.buffer[ymin].size() + 1);
 						for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
 						markSelectionLine(ymax, 0, xmax);
 					}

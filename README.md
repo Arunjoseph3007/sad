@@ -24,9 +24,11 @@ We are at a very basic stage so lower you expectations
 - Handle gigantic files
 - Handle line number better
 - Command system
+  - we could use [sol2](https://github.com/ThePhD/sol2)
 - Syntax highlighting
   - Preferably based on active mode
 
 ## Reference
 - [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)
 - [TextMate Grammar](https://macromates.com/manual/en/language_grammars)
+- [sol2](https://github.com/ThePhD/sol2)
