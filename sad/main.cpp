@@ -138,6 +138,20 @@ static bool delWord(GLFWwindow* window, Editor& e) {
 	e.delWord();
 	return true;
 }
+static bool findWord(Editor& e, std::string search_query) {
+	IVec2 gEnd = e.getGhostEnd();
+	for (int i = gEnd.y;i < e.buffer.size();i++) {
+		size_t found = e.buffer[i].find(search_query);
+		if (found != std::string::npos) {
+			e.cursor.start.y = i;
+			e.cursor.start.x = found;
+			e.cursor.end.y = i;
+			e.cursor.end.x = found + search_query.size();
+			return true;
+		}
+	}
+	return false;
+}
 
 static void SetupTheme() {}
 
@@ -407,6 +421,7 @@ int main(int, char**) {
 						else if (command == "down") editor.down();
 						else if (command == "left") editor.left();
 						else if (command == "right") editor.right();
+						else if (command == "find") findWord(editor, "query");
 					}
 
 					shoudlFocusEditor = true;
