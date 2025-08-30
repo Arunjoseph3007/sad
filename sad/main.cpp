@@ -24,6 +24,32 @@ static void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+typedef std::unordered_map<std::string, ImVec4> SyntaxHighlightTheme;
+
+SyntaxHighlightTheme SyntaxTheme = {
+	{ "control",		ImColor(72, 163, 219) },
+	{ "declaration",	ImColor(159, 81, 176) },
+	{ "context",		ImColor(54, 89, 217) },
+	{ "literal",		ImColor(45, 142, 207) },
+	{ "string",			ImColor(84, 150, 75) },
+	{ "numeric",		ImColor(160, 171, 60) },
+	{ "operator",		ImColor(255, 255, 255) },
+	{ "commnets",		ImColor(160, 161, 157) },
+	{ "variable",		ImColor(116, 182, 232) },
+	{ "punctuation",	ImColor(255, 255, 255) },
+};
+
+ImVec4 getTokenColor(int curTokIdx, const std::vector<GrammarMatch>& tokens, SyntaxHighlightTheme& theme) {
+	while (curTokIdx >= tokens.size())curTokIdx--;
+
+	auto it = theme.find(tokens[curTokIdx].matchedClass);
+	if (it != theme.end()) {
+		return it->second;
+	}
+
+	return ImColor(255, 0, 0);
+}
+
 // Keybindings
 static bool pasteTextFromClipBoard(GLFWwindow* window, Editor& e) {
 	e.startTransaction();
@@ -298,6 +324,8 @@ int main(int, char**) {
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
+	Grammar grammar = simpleJsGrammar();
+	editor.loadGrammar(grammar);
 	int lineNumberMode = 0;
 	float scroll_y = 0.0f;
 	// TODO load this from config file
@@ -342,7 +370,7 @@ int main(int, char**) {
 
 		// File tree
 		{
-			ImGui::Begin("FileTree");                          // Create a window called "Hello, world!" and append into it.
+			ImGui::Begin("FileTree");
 
 			auto [clicked, selectedPath] = ft.renderImGui();
 			if (clicked) {
@@ -496,7 +524,8 @@ int main(int, char**) {
 					}
 				}
 
-
+				int charCount = 0;
+				int curTokIdx = 0;
 				for (int i = 0;i < editor.buffer.size();i++) {
 					ImGui::TableNextRow();
 
@@ -520,7 +549,23 @@ int main(int, char**) {
 					ImGui::PopStyleColor();
 
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(editor.buffer[i].c_str());
+
+					for (int j = 0;j < editor.buffer[i].size();j++) {
+						if (curTokIdx >= editor.tokens.size()) {
+							std::cout << "oh no error\n";
+							for (auto it : editor.tokens) std::cout << it << std::endl;
+						}
+						ImGui::PushStyleColor(ImGuiCol_Text, getTokenColor(curTokIdx, editor.tokens, SyntaxTheme));
+						ImGui::TextUnformatted(editor.buffer[i].data() + j, editor.buffer[i].data() + j + 1);
+						ImGui::PopStyleColor();
+
+						charCount++;
+						if (curTokIdx < editor.tokens.size() && charCount >= editor.tokens[curTokIdx].end) curTokIdx++;
+
+						if (j != editor.buffer[i].size() - 1) ImGui::SameLine(0, 0);
+					}
+					charCount++;
+					//ImGui::TextUnformatted(editor.buffer[i].c_str());
 				}
 
 				ImGui::PopStyleVar();

@@ -2,6 +2,9 @@
 
 A simple text editor written in C++ using ImGui
 
+It looks like this
+![Sad editor](./assets/image.png "Sad editor")
+
 ## Features
 We are at a very basic stage so lower you expectations
 - Simple Cursor navigation
@@ -9,6 +12,7 @@ We are at a very basic stage so lower you expectations
 - Basic Keybindings system
 - Cut/Copy/Paste
 - Cursor position aware Undo/Redo
+- Basic syntax highlighting
 
 ## TODO
 - Multi cursor
@@ -27,6 +31,7 @@ We are at a very basic stage so lower you expectations
   - we could use [sol2](https://github.com/ThePhD/sol2)
 - Syntax highlighting
   - Preferably based on active mode
+  - comments not working
 
 ## Reference
 - [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)

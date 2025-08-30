@@ -47,6 +47,18 @@ Editor::Editor() {
 	this->buffer.reserve(1024);
 }
 
+std::string Editor::getText() const {
+	std::string result;
+
+	for (int i = 0;i < this->buffer.size();i++) {
+		result += this->buffer[i];
+
+		if (i != this->buffer.size() - 1) result += '\n';
+	}
+
+	return result;
+}
+
 bool Editor::startTransaction() {
 	if (this->transactionRefCount == 0) {
 		this->oldBuffer = this->buffer;
@@ -75,6 +87,10 @@ bool Editor::endTransaction() {
 	while (this->undoHistory.size() > MAX_UNDO_HISTORY_SIZE) {
 		this->undoHistory.pop_front();
 	}
+
+	// after change re calculate tokens
+	this->tokens = this->grammar.parseString(this->getText());
+
 	return true;
 }
 
@@ -494,6 +510,10 @@ bool Editor::end() {
 	this->cursor.end.x = this->buffer[this->cursor.end.y].size();
 	this->cursor.start.x = this->buffer[this->cursor.end.y].size();
 	return true;
+}
+
+void Editor::loadGrammar(Grammar grammar) {
+	this->grammar = grammar;
 }
 
 void Editor::debug() {

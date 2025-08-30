@@ -3,6 +3,7 @@
 #include <deque>
 #include "Cursor.h"
 #include "Edit.h"
+#include "Grammar.h"
 
 typedef std::deque<Edit> History;
 
@@ -15,6 +16,7 @@ public:
 
 	Editor();
 	void debug();
+	std::string getText() const;
 
 	/*
 		Undo system
@@ -97,4 +99,16 @@ public:
 	bool delWord();
 
 	void enter();
+
+	/*
+		Syntax highlighting stuff
+		this really should be here but we are using it just to move fast
+	*/
+private:
+	Grammar grammar;
+
+public:
+	std::vector<GrammarMatch> tokens;
+
+	void loadGrammar(Grammar grammar);
 };
