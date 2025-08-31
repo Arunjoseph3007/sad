@@ -4,6 +4,7 @@
 
 Grammar simpleJsGrammar() {
 	Grammar js = {};
+	js.patterns.push_back({ "commnets", std::regex(R"(\/\/.*|\/\*[\s\S]*?\*\/)") });
 	js.patterns.push_back({ "control", std::regex(R"(\b(break|case|catch|continue|default|do|else|finally|for|if|return|switch|throw|try|while|with)\b)") });
 	js.patterns.push_back({ "declaration", std::regex(R"(\b(var|let|const|function|class)\b)") });
 	js.patterns.push_back({ "context", std::regex(R"(\b(this|super|new|delete|typeof|void|yield|await|import|export)\b)") });
@@ -11,7 +12,6 @@ Grammar simpleJsGrammar() {
 	js.patterns.push_back({ "string", std::regex(R"(([\"'`])((?:(?!\1)(?:\\.|[^\\]))*)(\1))") });
 	js.patterns.push_back({ "numeric", std::regex(R"(\b(?:0[bB][01]+|0[oO][0-7]+|0[xX][\dA-Fa-f]+|\d+(\.\d+)?([eE][+-]?\d+)?|\.\d+([eE][+-]?\d+)?)\b)") });
 	js.patterns.push_back({ "operator", std::regex(R"((\+\+|--|===|==|!==|!=|<=|>=|<|>|\+=|-=|\*=|\/=|%=|\*\*|&&|\|\||!|=|\+|-|\*|\/|%|\*\*=|&=|\|=|\^=|<<=|>>=|>>>=|&|\||\^|~|<<|>>|>>>|\?|:|=>))") });
-	js.patterns.push_back({ "commnets", std::regex(R"(\/\/.*|\/\*[\s\S]*?\*\/)") });
 	js.patterns.push_back({ "variable", std::regex(R"(\b[a-zA-Z_$][a-zA-Z0-9_$]*\b)") });
 	js.patterns.push_back({ "punctuation", std::regex(R"([.,;()[\]{}])") });
 

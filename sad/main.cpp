@@ -251,12 +251,16 @@ static void handleTitleBar(GLFWwindow* window) {
 	}
 }
 
-int grammarMain() {
+int grammarmain() {
 	auto grammar = simpleJsGrammar();
 	std::string input(R"(
 		const height="strinjdhdjsdhdkhfgheght";
 		const width = 500;
-
+		// comment
+		/* single line comment */
+		/* multi line comment
+		   multi line comment
+		   multi line comment */
 		if (width > height) {
 			console.log({hey: "hello"});
 		}
