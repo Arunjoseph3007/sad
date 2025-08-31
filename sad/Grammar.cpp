@@ -26,6 +26,8 @@ std::vector<GrammarMatch> Grammar::parseString(const std::string& input) const {
 
 		// ignore white space
 		if (c == ' ' || c == '\r' || c == '\t' || c == '\n') {
+			GrammarMatch m = { .start = i, .end = i + 1,.matchedClass = "whitespace" };
+			result.push_back(m);
 			i++;
 			continue;
 		}

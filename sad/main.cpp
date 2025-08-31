@@ -24,7 +24,7 @@ static void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-typedef std::unordered_map<std::string, ImVec4> SyntaxHighlightTheme;
+typedef std::unordered_map<std::string, ImColor> SyntaxHighlightTheme;
 
 SyntaxHighlightTheme SyntaxTheme = {
 	{ "control",		ImColor(72, 163, 219) },
@@ -39,8 +39,10 @@ SyntaxHighlightTheme SyntaxTheme = {
 	{ "punctuation",	ImColor(255, 255, 255) },
 };
 
-ImVec4 getTokenColor(int curTokIdx, const std::vector<GrammarMatch>& tokens, SyntaxHighlightTheme& theme) {
-	while (curTokIdx >= tokens.size())curTokIdx--;
+ImColor getTokenColor(int curTokIdx, const std::vector<GrammarMatch>& tokens, SyntaxHighlightTheme& theme) {
+	if (tokens.size() == 0) return ImColor(255, 0, 0);
+
+	if (curTokIdx >= tokens.size()) curTokIdx = tokens.size() - 1;
 
 	auto it = theme.find(tokens[curTokIdx].matchedClass);
 	if (it != theme.end()) {
@@ -94,7 +96,6 @@ static bool selectAll(GLFWwindow* window, Editor& e) {
 	e.cursor.end.x = e.buffer[e.buffer.size() - 1].size();
 	return true;
 }
-
 static bool moveLeftWord(GLFWwindow* window, Editor& e) {
 	e.leftWord();
 	return true;
@@ -103,7 +104,6 @@ static bool moveRightWord(GLFWwindow* window, Editor& e) {
 	e.rightWord();
 	return true;
 }
-
 static bool moveLineUp(GLFWwindow* window, Editor& e) {
 	e.startTransaction();
 	int y = e.cursor.selectionStart(e.buffer).y;
@@ -251,7 +251,7 @@ static void handleTitleBar(GLFWwindow* window) {
 	}
 }
 
-int grammarmain() {
+int gmain() {
 	auto grammar = simpleJsGrammar();
 	std::string input(R"(
 		const height="strinjdhdjsdhdkhfgheght";
@@ -272,6 +272,88 @@ int grammarmain() {
 		std::cout << m << ": " << s << std::endl;
 	}
 	return 0;
+}
+
+static int lineNumberMode = 0;
+
+static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style) {
+	const int lineNumberBarSize = 40;
+	const int lineHeight = 24;
+	const int charWidth = 10;
+	const ImColor lineNoCol(100, 100, 100);
+	ImVec2 p = ImGui::GetCursorScreenPos();
+
+
+	// render cursor
+	{
+		const int cursorWidth = 2;
+		IVec2 pos = editor.getGhostEnd();
+		int yp = p.y + pos.y * lineHeight;
+		int xp = p.x + lineNumberBarSize + pos.x * charWidth;
+		ImVec2 start(xp, yp);
+		ImVec2 end(start.x + cursorWidth, start.y + lineHeight);
+		drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
+	}
+
+	// render selection
+	auto markSelectionLine = [&](int y, int sx, int ex) {
+		ImVec2 lstart(lineNumberBarSize + p.x + sx * charWidth, p.y + y * lineHeight);
+		ImVec2 lend(lineNumberBarSize + p.x + ex * charWidth, lstart.y + lineHeight);
+		ImColor selCol = ImColor(1.0f, 1.0f, 1.0f, 0.3f);
+
+		drawList->AddRectFilled(lstart, lend, selCol);
+		};
+
+	if (editor.cursor.isSelection()) {
+		IVec2 st = editor.cursor.selectionStart(editor.buffer);
+		IVec2 ed = editor.cursor.selectionEnd(editor.buffer);
+
+		int xmin = st.x, xmax = ed.x;
+		int ymin = st.y, ymax = ed.y;
+
+		if (ymin == ymax) {
+			markSelectionLine(ymax, xmin, xmax);
+		}
+		else {
+			markSelectionLine(ymin, xmin, editor.buffer[ymin].size() + 1);
+			for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
+			markSelectionLine(ymax, 0, xmax);
+		}
+	}
+
+	// Render text
+	char lineNoBuffer[10];
+
+	int charCount = 0;
+	int curTokIdx = 0;
+	ImColor textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
+	for (int lineNo = 0;lineNo < editor.buffer.size();lineNo++) {
+		sprintf_s(lineNoBuffer, "%d", lineNo + 1);
+
+		int yp = p.y + lineNo * lineHeight;
+		int xp = p.x;
+		drawList->AddText(ImVec2(xp, yp), lineNoCol, lineNoBuffer);
+		xp += lineNumberBarSize;
+
+		for (int j = 0;j < editor.buffer[lineNo].size();j++) {
+			const char* lbegin = editor.buffer[lineNo].data();
+			drawList->AddText(ImVec2(xp, yp), textCol, lbegin + j, lbegin + j + 1);
+
+			xp += charWidth;
+			charCount++;
+			if (curTokIdx < editor.tokens.size() && charCount >= editor.tokens[curTokIdx].end) {
+				curTokIdx++;
+				textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
+			}
+
+			if (j != editor.buffer[lineNo].size() - 1) ImGui::SameLine(0, 0);
+		}
+		charCount++;
+		if (curTokIdx < editor.tokens.size() && charCount >= editor.tokens[curTokIdx].end) {
+			curTokIdx++;
+			textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
+		}
+	}
 }
 
 // Main code
@@ -330,7 +412,6 @@ int main(int, char**) {
 	Editor editor = Editor();
 	Grammar grammar = simpleJsGrammar();
 	editor.loadGrammar(grammar);
-	int lineNumberMode = 0;
 	float scroll_y = 0.0f;
 	// TODO load this from config file
 	KeyBindings bindings = {
@@ -480,101 +561,9 @@ int main(int, char**) {
 			if (!isKeyScrolling) {
 				scroll_y = ImGui::GetScrollY();
 			}
-			int lineNumberBarSize = 40;
 
-			if (ImGui::BeginTable("editor", 2)) {
-				ImGui::PushStyleVarY(ImGuiStyleVar_CellPadding, 2);
-				ImGui::TableSetupColumn("lineNo", ImGuiTableColumnFlags_WidthFixed, lineNumberBarSize);
-				ImGui::TableSetupColumn("textLine");
-
-				ImDrawList* drawList = ImGui::GetWindowDrawList();
-				ImVec2 p = ImGui::GetCursorScreenPos();
-				p.x += lineNumberBarSize;
-				p.x += 2 * style.FramePadding.x;
-				ImVec2 fSize(2, 24);
-
-				// Ghost Mouse End
-				{
-					IVec2 pos = editor.getGhostEnd();
-					ImVec2 start(p.x + pos.x * 10, p.y + pos.y * 24);
-					ImVec2 end(start.x + fSize.x, start.y + fSize.y);
-					drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
-				}
-
-				auto markSelectionLine = [&drawList, &p](int y, int sx, int ex) {
-					const int lineHeight = 24;
-					const int charWidth = 10;
-					ImVec2 lstart(p.x + sx * charWidth, p.y + y * lineHeight);
-					ImVec2 lend(p.x + ex * charWidth, lstart.y + lineHeight);
-					ImColor selCol = ImColor(1.0f, 1.0f, 1.0f, 0.3f);
-
-					drawList->AddRectFilled(lstart, lend, selCol);
-					};
-
-				if (editor.cursor.isSelection()) {
-					IVec2 st = editor.cursor.selectionStart(editor.buffer);
-					IVec2 ed = editor.cursor.selectionEnd(editor.buffer);
-
-					int xmin = st.x, xmax = ed.x;
-					int ymin = st.y, ymax = ed.y;
-
-					if (ymin == ymax) {
-						markSelectionLine(ymax, xmin, xmax);
-					}
-					else {
-						markSelectionLine(ymin, xmin, editor.buffer[ymin].size() + 1);
-						for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
-						markSelectionLine(ymax, 0, xmax);
-					}
-				}
-
-				int charCount = 0;
-				int curTokIdx = 0;
-				for (int i = 0;i < editor.buffer.size();i++) {
-					ImGui::TableNextRow();
-
-					ImGui::TableNextColumn();
-					float opacity = i == editor.cursor.end.y ? 1.0 : 0.4;
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 1, opacity));
-
-					int lineNumber = 0;
-					if (lineNumberMode == 0) {
-						lineNumber = i + 1;
-					}
-					else if (lineNumberMode == 1) {
-						if (i != editor.cursor.end.y) {
-							lineNumber = std::abs(i - editor.cursor.end.y);
-						}
-						else {
-							lineNumber = i + 1;
-						}
-					}
-					ImGui::Text("%d", lineNumber);
-					ImGui::PopStyleColor();
-
-					ImGui::TableNextColumn();
-
-					for (int j = 0;j < editor.buffer[i].size();j++) {
-						if (curTokIdx >= editor.tokens.size()) {
-							std::cout << "oh no error\n";
-							for (auto it : editor.tokens) std::cout << it << std::endl;
-						}
-						ImGui::PushStyleColor(ImGuiCol_Text, getTokenColor(curTokIdx, editor.tokens, SyntaxTheme));
-						ImGui::TextUnformatted(editor.buffer[i].data() + j, editor.buffer[i].data() + j + 1);
-						ImGui::PopStyleColor();
-
-						charCount++;
-						if (curTokIdx < editor.tokens.size() && charCount >= editor.tokens[curTokIdx].end) curTokIdx++;
-
-						if (j != editor.buffer[i].size() - 1) ImGui::SameLine(0, 0);
-					}
-					charCount++;
-					//ImGui::TextUnformatted(editor.buffer[i].c_str());
-				}
-
-				ImGui::PopStyleVar();
-				ImGui::EndTable();
-			}
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			renderEditor(editor, drawList, style);
 
 			// Event handling
 			if (ImGui::IsWindowFocused()) {
