@@ -326,6 +326,7 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 
 	int charCount = 0;
 	int curTokIdx = 0;
+	int maxLineLength = 0;
 	ImColor textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
 	for (int lineNo = 0;lineNo < editor.buffer.size();lineNo++) {
 		sprintf_s(lineNoBuffer, "%d", lineNo + 1);
@@ -334,6 +335,8 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		int xp = p.x;
 		drawList->AddText(ImVec2(xp, yp), lineNoCol, lineNoBuffer);
 		xp += lineNumberBarSize;
+
+		if (editor.buffer[lineNo].size() > maxLineLength) maxLineLength = editor.buffer[lineNo].size();
 
 		for (int j = 0;j < editor.buffer[lineNo].size();j++) {
 			const char* lbegin = editor.buffer[lineNo].data();
@@ -354,6 +357,9 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 			textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
 		}
 	}
+
+	ImVec2 scrollSpace(maxLineLength * charWidth + lineNumberBarSize + 100, editor.buffer.size() * lineHeight);
+	ImGui::Dummy(scrollSpace);
 }
 
 // Main code
