@@ -6,6 +6,7 @@
 #include <cctype>
 #include "Editor.h"
 #include "imgui.h"
+#include "Timer.h"
 
 enum CharType {
 	Alphabet,
@@ -252,6 +253,7 @@ void Editor::emptySelection() {
 
 
 void Editor::insertBefore(const char c) {
+	TIMEIT();
 	this->startTransaction();
 
 	if (this->cursor.isSelection()) {
