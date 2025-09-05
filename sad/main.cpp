@@ -487,6 +487,8 @@ int main(int, char**) {
 		{
 			ImGui::Begin("Debug");
 
+
+			ImGui::Text("FPS = %.1f", io.Framerate);
 			ImGui::Text("Ref count %d", editor.transactionRefCount);
 			ImGui::Text("Undo stack %d", editor.undoHistory.size());
 			ImGui::Text("Redo stack %d", editor.redoHistory.size());
