@@ -1,4 +1,5 @@
 #include "Grammar.h"
+#include "Timer.h"
 #include <string>
 #include <iostream>
 
@@ -19,6 +20,8 @@ Grammar simpleJsGrammar() {
 }
 
 std::vector<GrammarMatch> Grammar::parseString(const std::string& input) const {
+	TIMEIT();
+
 	std::vector<GrammarMatch> result;
 
 	for (size_t i = 0;i < input.size();) {

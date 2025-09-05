@@ -10,5 +10,5 @@ Timer::~Timer() {
 
 	long long durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - this->start).count();
 
-	printf("[TIMER]: %s exited in %lld ms", this->iden, durationMs);
+	printf("[TIMER]: %s exited in %lld ms\n", this->iden, durationMs);
 }
