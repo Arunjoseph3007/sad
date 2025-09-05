@@ -253,7 +253,6 @@ void Editor::emptySelection() {
 
 
 void Editor::insertBefore(const char c) {
-	TIMEIT();
 	this->startTransaction();
 
 	if (this->cursor.isSelection()) {

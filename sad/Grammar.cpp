@@ -38,10 +38,10 @@ std::vector<GrammarMatch> Grammar::parseString(const std::string& input) const {
 		bool found = false;
 		for (const GrammarRules& rule : this->patterns) {
 			std::cmatch match;
-			std::regex_search(input.data() + i, match, rule.match);
+			std::regex_search(input.data() + i, match, rule.match, std::regex_constants::match_continuous);
 
 			// match found
-			if (match.size() > 0 && input.data() + i == match[0].first) {
+			if (match.size() > 0) {
 				found = true;
 				GrammarMatch m = { .start = i, .end = i + match[0].length(),.matchedClass = rule.name };
 				result.push_back(m);

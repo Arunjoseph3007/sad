@@ -32,6 +32,7 @@ We are at a very basic stage so lower you expectations
 - Syntax highlighting
   - Preferably based on active mode
   - comments not working
+  - regex is kind of dumb soemtimes it gets stack overflow error
 
 ## Reference
 - [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)
