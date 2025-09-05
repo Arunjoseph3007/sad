@@ -7,6 +7,7 @@
 #include "Editor.h"
 #include "KeyBindings.h"
 #include "Grammar.h"
+#include "Timer.h"
 
 #include <stdio.h>
 #include <regex>
