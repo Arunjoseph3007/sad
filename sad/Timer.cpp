@@ -1,14 +1,16 @@
 #include "Timer.h"
 
+using namespace std::chrono;
+
 Timer::Timer(const char* iden) {
-	this->start = std::chrono::system_clock::now();
+	this->start = high_resolution_clock::now();
 	this->iden = iden;
 }
 
 Timer::~Timer() {
-	std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+	high_resolution_clock::time_point end = high_resolution_clock::now();
 
-	long long durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - this->start).count();
+	long long durationMicro = duration_cast<microseconds>(end - this->start).count();
 
-	printf("[TIMER]: %s exited in %lld ms\n", this->iden, durationMs);
+	printf("[TIMER]: %s finished in %f ms\n", this->iden, (float)durationMicro / 1000);
 }
