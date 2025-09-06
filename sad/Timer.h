@@ -3,7 +3,7 @@
 
 class Timer {
 private:
-	std::chrono::system_clock::time_point start;
+	std::chrono::high_resolution_clock::time_point start;
 	const char* iden;
 
 public:
