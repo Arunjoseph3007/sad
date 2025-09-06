@@ -28,16 +28,16 @@ static void glfw_error_callback(int error, const char* description) {
 typedef std::unordered_map<std::string, ImColor> SyntaxHighlightTheme;
 
 SyntaxHighlightTheme SyntaxTheme = {
-	{ "control",		ImColor(72, 163, 219) },
-	{ "declaration",	ImColor(159, 81, 176) },
-	{ "context",		ImColor(54, 89, 217) },
-	{ "literal",		ImColor(45, 142, 207) },
-	{ "string",			ImColor(84, 150, 75) },
-	{ "numeric",		ImColor(160, 171, 60) },
-	{ "operator",		ImColor(255, 255, 255) },
-	{ "comment",		ImColor(160, 161, 157) },
-	{ "variable",		ImColor(116, 182, 232) },
-	{ "punctuation",	ImColor(255, 255, 255) },
+	{ "control",        ImColor(94, 129, 172) },   // Nord Blue (#5E81AC)
+	{ "declaration",    ImColor(191, 97, 106) },   // Nord Red (#BF616A)
+	{ "context",        ImColor(136, 192, 208) },  // Nord Light Blue (#88C0D0)
+	{ "literal",        ImColor(208, 135, 112) },  // Nord Orange (#D08770)
+	{ "string",         ImColor(163, 190, 140) },  // Nord Green (#A3BE8C)
+	{ "numeric",        ImColor(180, 142, 173) },  // Nord Purple (#B48EAD)
+	{ "operator",       ImColor(236, 239, 244) },  // Nord Snow 2 (#ECEFF4)
+	{ "comment",        ImColor(106, 115, 117) },  // Nord Blue Gray (#81A1C1)
+	{ "variable",       ImColor(143, 188, 187) },  // Nord Cyan (#8FBCBB)
+	{ "punctuation",    ImColor(236, 239, 244) },  // Nord Snow 2 (#ECEFF4)
 };
 
 ImColor getTokenColor(int curTokIdx, const std::vector<GrammarMatch>& tokens, SyntaxHighlightTheme& theme) {
@@ -417,6 +417,32 @@ int main(int, char**) {
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
+	editor.insertBefore(R"(const hello = "heheh";
+const hey = 5.88181;
+
+// hello
+/* comment */
+/* 
+  multi line comment
+*/
+console.log({ hello: hello, hey: hey });
+
+const brother = (x) => {
+  if (x > 100) {
+    return 200;
+  } else {
+    throw new Error(something);
+  }
+};
+
+export default class NewClass {
+  constructor() {
+    brother();
+  }
+
+  async root() {}
+}
+)");
 	Grammar grammar = simpleJsGrammar();
 	editor.loadGrammar(grammar);
 	float scroll_y = 0.0f;
