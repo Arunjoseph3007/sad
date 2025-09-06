@@ -7,15 +7,14 @@
 * We support 2 types of rules, TokenBased and RegionBased
 *
 * TokenBased: use match regex to match entire token like keywords, operator, puctuations, etc
-* RegionBased: use startMatch to mark start of a region and searches for endMatch to define end
+* RegionBased: use match to mark start of a region and searches for endMatch to define end
 */
 class GrammarRule {
 public:
 	std::string name;
-	std::regex match = {};
+	std::regex match;
 
 	bool isRegionBased = {};
-	std::regex startMatch = {};
 	std::regex endMatch = {};
 
 	// used to creatin TokenBased rule
@@ -29,7 +28,7 @@ public:
 	GrammarRule(std::string name, std::regex startMatch, std::regex endMatch) :
 		name(name),
 		isRegionBased(true),
-		startMatch(startMatch),
+		match(startMatch),
 		endMatch(endMatch) {
 	};
 };
