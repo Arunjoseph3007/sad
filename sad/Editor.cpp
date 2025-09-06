@@ -506,22 +506,26 @@ void Editor::enterAndIndent() {
 	IVec2 gPos = this->getGhostEnd();
 
 	int indentSize = this->getIndentOf(gPos.y);
-	if (this->shouldAddIndent(gPos.y, gPos.x)) {
-		std::cout << "adding indentation\n";
-		indentSize += 2;
-	}
+	bool shouldAddIndent = this->shouldAddIndent(gPos.y, gPos.x);
+	bool shouldDropIntoNewLine = this->shouldDropIntoNewLine(gPos.y, gPos.x);
 
 	std::string before = this->buffer[gPos.y].substr(0, gPos.x);
-	// adding indentation to after
-	std::string after = std::string(indentSize, ' ') + this->buffer[gPos.y].substr(gPos.x);
+	std::string indentation = std::string(shouldAddIndent ? indentSize + 2 : indentSize, ' ');
+	std::string after = this->buffer[gPos.y].substr(gPos.x);
 
 	this->buffer[gPos.y] = before;
-	this->buffer.insert(this->buffer.begin() + gPos.y + 1, after);
+	if (shouldDropIntoNewLine) {
+		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation);
+		this->buffer.insert(this->buffer.begin() + gPos.y + 2, std::string(indentSize, ' ') + after);
+	}
+	else {
+		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation + after);
+	}
 
 	this->cursor.end.y++;
 	this->cursor.start.y++;
-	this->cursor.end.x = indentSize;
-	this->cursor.start.x = indentSize;
+	this->cursor.end.x = indentation.size();
+	this->cursor.start.x = indentation.size();
 
 	this->endTransaction();
 }
@@ -549,23 +553,24 @@ int Editor::getIndentOf(int lineNo) {
 	return indentSize;
 }
 
+static std::unordered_set<char> indentOpeners = { '(','[','{' };
+static std::unordered_set<char> indentClosers = { ')',']','}' };
+
 // TODO this might differ from exact behaviour of vscode, but is good enough for now
 bool Editor::shouldAddIndent(int lineNo, int curPosX) {
-	static std::unordered_set<char> indentOpeners = { '(','[','{' };
-	static std::unordered_set<char> indentClosers = { ')',']','}' };
-
 	for (int i = curPosX - 1; i >= 0; i--) {
 		if (indentOpeners.find(this->buffer[lineNo][i]) != indentOpeners.end()) {
-			std::cout << "found opener\n";
 			return true;
 		}
 		else if (indentClosers.find(this->buffer[lineNo][i]) != indentClosers.end()) {
-			std::cout << "found closer\n";
 			return false;
 		}
 	}
-	std::cout << "found none\n";
 	return false;
+}
+
+bool Editor::shouldDropIntoNewLine(int lineNo, int curPosX) {
+	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
 void Editor::loadGrammar(Grammar grammar) {
