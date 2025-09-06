@@ -35,7 +35,7 @@ SyntaxHighlightTheme SyntaxTheme = {
 	{ "string",			ImColor(84, 150, 75) },
 	{ "numeric",		ImColor(160, 171, 60) },
 	{ "operator",		ImColor(255, 255, 255) },
-	{ "commnets",		ImColor(160, 161, 157) },
+	{ "comment",		ImColor(160, 161, 157) },
 	{ "variable",		ImColor(116, 182, 232) },
 	{ "punctuation",	ImColor(255, 255, 255) },
 };
