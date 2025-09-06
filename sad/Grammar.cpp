@@ -6,7 +6,9 @@
 Grammar simpleJsGrammar() {
 	Grammar js = {};
 
-	js.patterns.emplace_back("comment", std::regex(R"(\/\/.*|\/\*[\s\S]*?\*\/)"));
+	js.patterns.emplace_back("comment", std::regex(R"(\/\/.*)"));
+	js.patterns.emplace_back("comment", std::regex(R"(\/\*)"), std::regex(R"(\*\/)"));
+
 	js.patterns.emplace_back("control", std::regex(R"(\b(break|case|catch|continue|default|do|else|finally|for|if|return|switch|throw|try|while|with)\b)"));
 	js.patterns.emplace_back("declaration", std::regex(R"(\b(var|let|const|function|class)\b)"));
 	js.patterns.emplace_back("context", std::regex(R"(\b(this|super|new|delete|typeof|void|yield|await|import|export)\b)"));
