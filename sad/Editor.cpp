@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <iostream>
 #include <cctype>
 #include "Editor.h"
@@ -253,7 +254,6 @@ void Editor::emptySelection() {
 
 
 void Editor::insertBefore(const char c) {
-	TIMEIT();
 	this->startTransaction();
 
 	if (this->cursor.isSelection()) {
@@ -497,6 +497,39 @@ void Editor::enter() {
 	this->endTransaction();
 }
 
+void Editor::enterAndIndent() {
+	this->startTransaction();
+
+	if (this->cursor.isSelection()) {
+		this->emptySelection();
+	}
+	IVec2 gPos = this->getGhostEnd();
+
+	int indentSize = this->getIndentOf(gPos.y);
+	bool shouldAddIndent = this->shouldAddIndent(gPos.y, gPos.x);
+	bool shouldDropIntoNewLine = this->shouldDropIntoNewLine(gPos.y, gPos.x);
+
+	std::string before = this->buffer[gPos.y].substr(0, gPos.x);
+	std::string indentation = std::string(shouldAddIndent ? indentSize + 2 : indentSize, ' ');
+	std::string after = this->buffer[gPos.y].substr(gPos.x);
+
+	this->buffer[gPos.y] = before;
+	if (shouldDropIntoNewLine) {
+		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation);
+		this->buffer.insert(this->buffer.begin() + gPos.y + 2, std::string(indentSize, ' ') + after);
+	}
+	else {
+		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation + after);
+	}
+
+	this->cursor.end.y++;
+	this->cursor.start.y++;
+	this->cursor.end.x = indentation.size();
+	this->cursor.start.x = indentation.size();
+
+	this->endTransaction();
+}
+
 bool Editor::home() {
 	if (this->cursor.end.x == 0) {
 		return false;
@@ -512,6 +545,32 @@ bool Editor::end() {
 	this->cursor.end.x = this->buffer[this->cursor.end.y].size();
 	this->cursor.start.x = this->buffer[this->cursor.end.y].size();
 	return true;
+}
+
+int Editor::getIndentOf(int lineNo) {
+	int indentSize = 0;
+	while (indentSize < this->buffer[lineNo].size() && this->buffer[lineNo][indentSize] == ' ') indentSize++;
+	return indentSize;
+}
+
+static std::unordered_set<char> indentOpeners = { '(','[','{' };
+static std::unordered_set<char> indentClosers = { ')',']','}' };
+
+// TODO this might differ from exact behaviour of vscode, but is good enough for now
+bool Editor::shouldAddIndent(int lineNo, int curPosX) {
+	for (int i = curPosX - 1; i >= 0; i--) {
+		if (indentOpeners.find(this->buffer[lineNo][i]) != indentOpeners.end()) {
+			return true;
+		}
+		else if (indentClosers.find(this->buffer[lineNo][i]) != indentClosers.end()) {
+			return false;
+		}
+	}
+	return false;
+}
+
+bool Editor::shouldDropIntoNewLine(int lineNo, int curPosX) {
+	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
 void Editor::loadGrammar(Grammar grammar) {
