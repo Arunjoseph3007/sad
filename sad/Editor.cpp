@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <iostream>
 #include <cctype>
 #include "Editor.h"
@@ -496,6 +497,35 @@ void Editor::enter() {
 	this->endTransaction();
 }
 
+void Editor::enterAndIndent() {
+	this->startTransaction();
+
+	if (this->cursor.isSelection()) {
+		this->emptySelection();
+	}
+	IVec2 gPos = this->getGhostEnd();
+
+	int indentSize = this->getIndentOf(gPos.y);
+	if (this->shouldAddIndent(gPos.y, gPos.x)) {
+		std::cout << "adding indentation\n";
+		indentSize += 2;
+	}
+
+	std::string before = this->buffer[gPos.y].substr(0, gPos.x);
+	// adding indentation to after
+	std::string after = std::string(indentSize, ' ') + this->buffer[gPos.y].substr(gPos.x);
+
+	this->buffer[gPos.y] = before;
+	this->buffer.insert(this->buffer.begin() + gPos.y + 1, after);
+
+	this->cursor.end.y++;
+	this->cursor.start.y++;
+	this->cursor.end.x = indentSize;
+	this->cursor.start.x = indentSize;
+
+	this->endTransaction();
+}
+
 bool Editor::home() {
 	if (this->cursor.end.x == 0) {
 		return false;
@@ -511,6 +541,31 @@ bool Editor::end() {
 	this->cursor.end.x = this->buffer[this->cursor.end.y].size();
 	this->cursor.start.x = this->buffer[this->cursor.end.y].size();
 	return true;
+}
+
+int Editor::getIndentOf(int lineNo) {
+	int indentSize = 0;
+	while (indentSize < this->buffer[lineNo].size() && this->buffer[lineNo][indentSize] == ' ') indentSize++;
+	return indentSize;
+}
+
+// TODO this might differ from exact behaviour of vscode, but is good enough for now
+bool Editor::shouldAddIndent(int lineNo, int curPosX) {
+	static std::unordered_set<char> indentOpeners = { '(','[','{' };
+	static std::unordered_set<char> indentClosers = { ')',']','}' };
+
+	for (int i = curPosX - 1; i >= 0; i--) {
+		if (indentOpeners.find(this->buffer[lineNo][i]) != indentOpeners.end()) {
+			std::cout << "found opener\n";
+			return true;
+		}
+		else if (indentClosers.find(this->buffer[lineNo][i]) != indentClosers.end()) {
+			std::cout << "found closer\n";
+			return false;
+		}
+	}
+	std::cout << "found none\n";
+	return false;
 }
 
 void Editor::loadGrammar(Grammar grammar) {

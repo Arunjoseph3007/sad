@@ -80,6 +80,9 @@ public:
 	bool home();
 	bool end();
 
+	int getIndentOf(int lineNo);
+	bool shouldAddIndent(int lineNo, int curPosX);
+
 	std::string getSelectionString() const;
 	void emptySelection();
 
@@ -99,6 +102,7 @@ public:
 	bool delWord();
 
 	void enter();
+	void enterAndIndent();
 
 	/*
 		Syntax highlighting stuff
