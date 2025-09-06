@@ -9,7 +9,7 @@
 * TokenBased: use match regex to match entire token like keywords, operator, puctuations, etc
 * RegionBased: use startMatch to mark start of a region and searches for endMatch to define end
 */
-class GrammarRules {
+class GrammarRule {
 public:
 	std::string name;
 	std::regex match = {};
@@ -19,14 +19,14 @@ public:
 	std::regex endMatch = {};
 
 	// used to creatin TokenBased rule
-	GrammarRules(std::string name, std::regex match) :
+	GrammarRule(std::string name, std::regex match) :
 		name(name),
 		isRegionBased(false),
 		match(match) {
 	};
 
 	// used to creatin RegionBased rule
-	GrammarRules(std::string name, std::regex startMatch, std::regex endMatch) :
+	GrammarRule(std::string name, std::regex startMatch, std::regex endMatch) :
 		name(name),
 		isRegionBased(true),
 		startMatch(startMatch),
@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& os, const GrammarMatch& obj);
 
 struct Grammar {
 public:
-	std::vector<GrammarRules> patterns;
+	std::vector<GrammarRule> patterns;
 
 	std::vector<GrammarMatch>	parseString(const std::string& input) const;
 };

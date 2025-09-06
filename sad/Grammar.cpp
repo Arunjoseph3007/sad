@@ -43,7 +43,7 @@ std::vector<GrammarMatch> Grammar::parseString(const std::string& input) const {
 		}
 
 		bool found = false;
-		for (const GrammarRules& rule : this->patterns) {
+		for (const GrammarRule& rule : this->patterns) {
 			if (rule.isRegionBased) {
 				std::cmatch startM, endM;
 				std::regex_search(input.data() + i, startM, rule.startMatch, std::regex_constants::match_continuous);
