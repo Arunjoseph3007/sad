@@ -12,7 +12,7 @@ We are at a very basic stage so lower you expectations
 - Basic Keybindings system
 - Cut/Copy/Paste
 - Cursor position aware Undo/Redo
-- Basic syntax highlighting
+- syntax highlighting
 
 ## TODO
 - Multi cursor
@@ -31,8 +31,9 @@ We are at a very basic stage so lower you expectations
   - we could use [sol2](https://github.com/ThePhD/sol2)
 - Syntax highlighting
   - Preferably based on active mode
-  - comments not working
-  - regex is kind of dumb soemtimes it gets stack overflow error
+- auto completions
+- LSP integration
+- modding using lua
 
 ## Reference
 - [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)

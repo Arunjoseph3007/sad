@@ -277,10 +277,10 @@ int gmain() {
 
 static int lineNumberMode = 0;
 
+const int lineHeight = 24;
+const int charWidth = 10;
 static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style) {
 	const int lineNumberBarSize = 40;
-	const int lineHeight = 24;
-	const int charWidth = 10;
 	const ImColor lineNoCol(100, 100, 100);
 	ImVec2 p = ImGui::GetCursorScreenPos();
 
@@ -727,6 +727,21 @@ export default class NewClass {
 							}
 						}
 					}
+				}
+
+				// if handled scroll cursor into focus
+				if (handled) {
+					//TODO currently we are only scrolling vertically
+					int curY = editor.getCursorEnd().y;
+
+					float scrollY = ImGui::GetScrollY();
+					float curPosY = curY * lineHeight;
+					float screenY = ImGui::GetWindowContentRegionMin().y;
+
+					if (curPosY < scrollY || curPosY > scrollY + screenY) {
+						ImGui::SetScrollY(curPosY);
+					}
+
 				}
 			}
 
