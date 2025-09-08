@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 #include "Cursor.h"
-
-typedef std::vector<std::string> TextBuffer;
+#include "Common.h"
+#include <deque>
 
 struct Edit {
 public:
@@ -18,5 +18,7 @@ public:
 	void undo(TextBuffer& buffer) const;
 	void redo(TextBuffer& buffer) const;
 };
+
+typedef std::deque<Edit> History;
 
 std::ostream& operator<<(std::ostream& os, const Edit& obj);

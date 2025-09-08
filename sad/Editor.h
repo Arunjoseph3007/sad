@@ -1,11 +1,8 @@
 #pragma once
 #include <string>
-#include <deque>
 #include "Cursor.h"
 #include "Edit.h"
 #include "Grammar.h"
-
-typedef std::deque<Edit> History;
 
 const int MAX_UNDO_HISTORY_SIZE = 100;
 

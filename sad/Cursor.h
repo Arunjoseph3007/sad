@@ -1,8 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-
-typedef std::vector<std::string> TextBuffer;
+#include "Common.h"
 
 std::ostream& operator<<(std::ostream& os, const TextBuffer& obj);
 
