@@ -417,6 +417,8 @@ int main(int, char**) {
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
+	Grammar grammar = simpleJsGrammar();
+	editor.loadGrammar(grammar);
 	editor.insertBefore(R"(const hello = "heheh";
 const hey = 5.88181;
 
@@ -424,7 +426,7 @@ const hey = 5.88181;
 /* comment */
 /* 
   multi line comment
-*/
+*/ const x = 0;
 console.log({ hello: hello, hey: hey });
 
 const brother = (x) => {
@@ -443,8 +445,7 @@ export default class NewClass {
   async root() {}
 }
 )");
-	Grammar grammar = simpleJsGrammar();
-	editor.loadGrammar(grammar);
+
 	float scroll_y = 0.0f;
 	// TODO load this from config file
 	KeyBindings bindings = {
