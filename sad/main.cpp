@@ -40,17 +40,11 @@ SyntaxHighlightTheme SyntaxTheme = {
 	{ "punctuation",    ImColor(236, 239, 244) },  // Nord Snow 2 (#ECEFF4)
 };
 
-ImColor getTokenColor(int curTokIdx, const std::vector<GrammarMatch>& tokens, SyntaxHighlightTheme& theme) {
-	if (tokens.size() == 0) return ImColor(255, 0, 0);
+static ImColor getTokenColor(const std::string& matchedClass, SyntaxHighlightTheme& theme) {
+	auto it = theme.find(matchedClass);
+	if (it != theme.end()) return it->second;
 
-	if (curTokIdx >= tokens.size()) curTokIdx = tokens.size() - 1;
-
-	auto it = theme.find(tokens[curTokIdx].matchedClass);
-	if (it != theme.end()) {
-		return it->second;
-	}
-
-	return ImColor(255, 0, 0);
+	return ImColor(255, 255, 255);
 }
 
 // Keybindings
@@ -252,33 +246,10 @@ static void handleTitleBar(GLFWwindow* window) {
 	}
 }
 
-int gmain() {
-	auto grammar = simpleJsGrammar();
-	std::string input(R"(
-		const height="strinjdhdjsdhdkhfgheght";
-		const width = 500;
-		// comment
-		/* single line comment */
-		/* multi line comment
-		   multi line comment
-		   multi line comment */
-		if (width > height) {
-			console.log({hey: "hello"});
-		}
-	)");
-	auto matches = grammar.parseString(input);
-
-	for (auto m : matches) {
-		auto s = input.substr(m.start, m.end - m.start);
-		std::cout << m << ": " << s << std::endl;
-	}
-	return 0;
-}
-
 static int lineNumberMode = 0;
-
 const int lineHeight = 24;
 const int charWidth = 10;
+
 static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style) {
 	const int lineNumberBarSize = 40;
 	const ImColor lineNoCol(100, 100, 100);
@@ -322,13 +293,10 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		}
 	}
 
-	// Render text
-	char lineNoBuffer[10];
 
-	int charCount = 0;
-	int curTokIdx = 0;
+	// Render line numbers
 	int maxLineLength = 0;
-	ImColor textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
+	char lineNoBuffer[10];
 	for (int lineNo = 0;lineNo < editor.buffer.size();lineNo++) {
 		sprintf_s(lineNoBuffer, "%d", lineNo + 1);
 
@@ -338,25 +306,20 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		xp += lineNumberBarSize;
 
 		if (editor.buffer[lineNo].size() > maxLineLength) maxLineLength = editor.buffer[lineNo].size();
+	}
 
-		for (int j = 0;j < editor.buffer[lineNo].size();j++) {
-			const char* lbegin = editor.buffer[lineNo].data();
-			drawList->AddText(ImVec2(xp, yp), textCol, lbegin + j, lbegin + j + 1);
+	// render tokens
+	for (const GrammarMatch& token : editor.tokens) {
+		if (token.matchedClass == "whitespace") continue;
 
-			xp += charWidth;
-			charCount++;
-			if (curTokIdx < editor.tokens.size() && charCount >= editor.tokens[curTokIdx].end) {
-				curTokIdx++;
-				textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
-			}
-
-			if (j != editor.buffer[lineNo].size() - 1) ImGui::SameLine(0, 0);
-		}
-		charCount++;
-		if (curTokIdx < editor.tokens.size() && charCount >= editor.tokens[curTokIdx].end) {
-			curTokIdx++;
-			textCol = getTokenColor(curTokIdx, editor.tokens, SyntaxTheme);
-		}
+		int xp = p.x + lineNumberBarSize + token.start * charWidth;
+		int yp = p.y + token.line * lineHeight;
+		drawList->AddText(
+			ImVec2(xp, yp),
+			getTokenColor(token.matchedClass, SyntaxTheme),
+			editor.buffer[token.line].data() + token.start,
+			editor.buffer[token.line].data() + token.end
+		);
 	}
 
 	ImVec2 scrollSpace(maxLineLength * charWidth + lineNumberBarSize + 100, editor.buffer.size() * lineHeight);

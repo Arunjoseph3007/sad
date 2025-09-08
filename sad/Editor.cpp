@@ -91,7 +91,7 @@ bool Editor::endTransaction() {
 	}
 
 	// after change re calculate tokens
-	this->tokens = this->grammar.parseString(this->getText());
+	this->tokens = this->grammar.parseTextBuffer(this->buffer);
 
 	return true;
 }
