@@ -2,6 +2,7 @@
 #include <string>
 #include <regex>
 #include <vector>
+#include "Common.h"
 
 /*
 * We support 2 types of rules, TokenBased and RegionBased
@@ -33,11 +34,11 @@ public:
 	};
 };
 
-
 struct GrammarMatch {
 public:
 	size_t start, end;
 	std::string matchedClass;
+	size_t line = 0;
 };
 
 std::ostream& operator<<(std::ostream& os, const GrammarMatch& obj);
@@ -46,7 +47,8 @@ struct Grammar {
 public:
 	std::vector<GrammarRule> patterns;
 
-	std::vector<GrammarMatch>	parseString(const std::string& input) const;
+	std::vector<GrammarMatch> parseString(const std::string& input) const;
+	std::vector<GrammarMatch> parseTextBuffer(const TextBuffer& tb) const;
 };
 
 Grammar simpleJsGrammar();
