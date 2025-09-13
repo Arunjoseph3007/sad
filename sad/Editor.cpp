@@ -108,6 +108,9 @@ bool Editor::undo() {
 	ed.undo(this->buffer);
 	this->cursor = ed.startCursor;
 
+	// since text changed re calculate tokens
+	this->tokens = this->grammar.parseTextBuffer(this->buffer);
+
 	return true;
 }
 
@@ -120,6 +123,10 @@ bool Editor::redo() {
 
 	ed.redo(this->buffer);
 	this->cursor = ed.endCursor;
+
+	// since text changed re calculate tokens
+	this->tokens = this->grammar.parseTextBuffer(this->buffer);
+
 	return true;
 }
 
