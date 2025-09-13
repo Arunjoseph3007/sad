@@ -13,6 +13,7 @@ We are at a very basic stage so lower you expectations
 - Cut/Copy/Paste
 - Cursor position aware Undo/Redo
 - syntax highlighting
+- Basic command center
 
 ## TODO
 - Multi cursor
@@ -25,6 +26,9 @@ We are at a very basic stage so lower you expectations
 - Better UI styling
 - fix alignment issue due to `\r \n \t`
 - Text wrapping
+- searching
+  - maybe also use search by regex
+- emacs style query replace
 - Handle gigantic files
 - Handle line number better
 - Command system
@@ -36,7 +40,9 @@ We are at a very basic stage so lower you expectations
 - modding using lua
 
 ## Reference
-- [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)
-- [TextMate Grammar](https://macromates.com/manual/en/language_grammars)
-- [Sublime Text Syntax Definitions](https://www.sublimetext.com/docs/syntax.html)
-- [sol2](https://github.com/ThePhD/sol2)
+- Syntax highlighting - we ultimately cooked our own simple (less powerful) system
+  - [How Emacs modes work?](https://www.emacswiki.org/emacs/ModeTutorial)
+  - [TextMate Grammar](https://macromates.com/manual/en/language_grammars)
+  - [Sublime Text Syntax Definitions](https://www.sublimetext.com/docs/syntax.html)
+- Embedding & scripting
+  - [sol2](https://github.com/ThePhD/sol2)

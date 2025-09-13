@@ -136,6 +136,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommandCenter.cpp" />
+    <ClCompile Include="Common.cpp" />
     <ClCompile Include="Cursor.cpp" />
     <ClCompile Include="Edit.cpp" />
     <ClCompile Include="Editor.cpp" />
@@ -153,6 +155,7 @@
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CommandCenter.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Edit.h" />
     <ClInclude Include="Cursor.h" />

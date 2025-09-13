@@ -22,22 +22,6 @@ static CharType getCharType(const char& c) {
 	return CharType::SpecialChar;
 }
 
-static TextBuffer splitString(const std::string& text, const char& delimiter = '\n') {
-	TextBuffer result;
-	std::string segment;
-	for (size_t i = 0; i < text.size(); i++) {
-		if (text[i] == delimiter) {
-			result.push_back(segment);
-			segment.clear();
-			continue;
-		}
-		segment += text[i];
-	}
-	result.push_back(segment);
-
-	return result;
-}
-
 static void debugCur(Cursor c) {
 	printf("x: %d, y: %d, xp: %d, yp: %d\n", c.start.x, c.start.y, c.end.x, c.end.y);
 }

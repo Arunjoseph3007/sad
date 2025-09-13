@@ -8,6 +8,7 @@
 #include "KeyBindings.h"
 #include "Grammar.h"
 #include "Timer.h"
+#include "CommandCenter.h"
 
 #include <stdio.h>
 #include <regex>
@@ -175,23 +176,6 @@ static bool findWord(Editor& e, std::string search_query) {
 }
 
 static void SetupTheme() {}
-
-static TextBuffer tokenize(const std::string& text) {
-	TextBuffer result;
-	std::string segment;
-	for (size_t i = 0; i < text.size(); i++) {
-		if (text[i] == ' ') {
-			result.push_back(segment);
-			segment.clear();
-			while (text[i + 1] == ' ')i++;
-			continue;
-		}
-		segment += text[i];
-	}
-	result.push_back(segment);
-
-	return result;
-}
 
 static void handleTitleBar(GLFWwindow* window) {
 	static double s_xpos = 0, s_ypos = 0;
@@ -380,6 +364,12 @@ int main(int, char**) {
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
+	CommandCenter commandCenter = {};
+	commandCenter.addCommand("up", CMD_DECL{ return e.up(); });
+	commandCenter.addCommand("down", CMD_DECL{ return e.down(); });
+	commandCenter.addCommand("left", CMD_DECL{ return e.left(); });
+	commandCenter.addCommand("right", CMD_DECL{ return e.right(); });
+
 	Grammar grammar = simpleJsGrammar();
 	editor.loadGrammar(grammar);
 	editor.insertBefore(R"(const hello = "heheh";
@@ -511,32 +501,7 @@ export default class NewClass {
 
 			char commandInputBuf[256] = "";
 			if (ImGui::InputText("##Command", commandInputBuf, IM_ARRAYSIZE(commandInputBuf), ImGuiInputTextFlags_EnterReturnsTrue)) {
-				// command submitted
-				std::vector<std::string> tokens = tokenize(commandInputBuf);
-				if (tokens.size() > 0) {
-					int repeat = 1;
-					std::string command = tokens[0];
-					if (tokens.size() == 2) {
-						try {
-							repeat = std::stoi(tokens[0]);
-						}
-						catch (const std::invalid_argument& e) {
-							std::cerr << "Error converting string: " << e.what() << std::endl;
-						}
-
-						command = tokens[1];
-					}
-					for (int i = 0;i < repeat;i++) {
-						if (command == "toggleLineNoMode") lineNumberMode = (lineNumberMode + 1) % 2;
-						else if (command == "up") editor.up();
-						else if (command == "down") editor.down();
-						else if (command == "left") editor.left();
-						else if (command == "right") editor.right();
-						else if (command == "find") findWord(editor, "query");
-					}
-
-					shoudlFocusEditor = true;
-				}
+				shoudlFocusEditor = commandCenter.dispatch(editor, commandInputBuf);
 			}
 
 			// part of above hack
