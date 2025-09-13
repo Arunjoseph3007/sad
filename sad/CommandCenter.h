@@ -21,7 +21,7 @@ public:
 	CommandFunc commandAction;
 	size_t argsCount;
 
-	void dispatch(Editor& editor, const CommandArgs& args) const;
+	bool dispatch(Editor& editor, const CommandArgs& args) const;
 };
 
 class CommandCenter {

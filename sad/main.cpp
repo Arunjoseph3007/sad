@@ -157,20 +157,68 @@ static bool delWord(GLFWwindow* window, Editor& e) {
 	e.delWord();
 	return true;
 }
-static bool findWord(Editor& e, std::string search_query) {
-	IVec2 gEnd = e.getGhostEnd();
-	for (int i = gEnd.y;i < e.buffer.size();i++) {
-		size_t found = e.buffer[i].find(search_query);
+static bool findWord(Editor& e, CommandArgs args) {
+	std::string search_query = args[0];
+
+	IVec2 gPos = e.getGhostEnd();
+	int searchStartPos = gPos.y;
+	int line = searchStartPos;
+	int offset = gPos.x;
+	do {
+		size_t found = e.buffer[line].find(search_query, offset);
 		if (found != std::string::npos) {
-			e.cursor.start.y = i;
+			e.cursor.start.y = line;
+			e.cursor.end.y = line;
 			e.cursor.start.x = found;
-			e.cursor.end.y = i;
 			e.cursor.end.x = found + search_query.size();
-			return true;
+			break;
 		}
-	}
+
+		offset = 0;
+		line = (line + 1) % e.buffer.size();
+	} while (line != searchStartPos);
+
+	// this always returns false 
+	// so that input stays on focus 
+	// and users can search for next just by enter
 	return false;
 }
+static bool replaceWord(Editor& e, CommandArgs args) {
+	std::string find = args[0];
+	std::string replace = args[1];
+
+	IVec2 gPos = e.getGhostEnd();
+	int searchStartPos = gPos.y;
+	int line = searchStartPos;
+	int offset = gPos.x;
+	do {
+		size_t found = e.buffer[line].find(find, offset);
+		if (found != std::string::npos) {
+			e.cursor.start.y = line;
+			e.cursor.end.y = line;
+			e.cursor.start.x = found;
+			e.cursor.end.x = found + find.size();
+
+			e.startTransaction();
+
+			e.emptySelection();
+			e.insertBefore(replace);
+			e.cursor.end.x -= replace.size();
+
+			e.endTransaction();
+			break;
+		}
+
+		offset = 0;
+		line = (line + 1) % e.buffer.size();
+	} while (line != searchStartPos);
+
+	// this always returns false 
+	// so that input stays on focus 
+	// and users can search for next just by enter
+	return false;
+}
+
 
 static void SetupTheme() {}
 
@@ -310,6 +358,9 @@ int main(int, char**) {
 	commandCenter.addCommand("down", CMD_DECL{ return e.down(); });
 	commandCenter.addCommand("left", CMD_DECL{ return e.left(); });
 	commandCenter.addCommand("right", CMD_DECL{ return e.right(); });
+	commandCenter.addCommand("insert", CMD_DECL{ e.insertBefore(args[0]); return true; }, 1);
+	commandCenter.addCommand("find", findWord, 1);
+	commandCenter.addCommand("replace", replaceWord, 2);
 
 	Grammar grammar = simpleJsGrammar();
 	editor.loadGrammar(grammar);
@@ -435,8 +486,8 @@ export default class NewClass {
 				shoudlFocusEditor = false;
 			}
 
-			char commandInputBuf[256] = "";
-			if (ImGui::InputText("##Command", commandInputBuf, IM_ARRAYSIZE(commandInputBuf), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			static char commandInputBuf[256] = "";
+			if (ImGui::InputText("##Command", commandInputBuf, IM_ARRAYSIZE(commandInputBuf), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
 				shoudlFocusEditor = commandCenter.dispatch(editor, commandInputBuf);
 			}
 

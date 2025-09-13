@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <iostream>
 
-void Command::dispatch(Editor& editor, const CommandArgs& args) const {
-	this->commandAction(editor, args);
+bool Command::dispatch(Editor& editor, const CommandArgs& args) const {
+	return this->commandAction(editor, args);
 }
 
 void CommandCenter::addCommand(const std::string& commandName, CommandFunc func, size_t argCount) {
@@ -57,8 +57,9 @@ bool CommandCenter::dispatch(Editor& editor, const char* commandText) const {
 		return false;
 	}
 
+	bool resp = true;
 	// dispatch repeatedly
-	for (int i = 0;i < repeat;i++) c.dispatch(editor, args);
+	for (int i = 0;i < repeat;i++) if (!c.dispatch(editor, args)) resp = false;
 
-	return true;
+	return resp;
 }
