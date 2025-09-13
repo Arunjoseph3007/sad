@@ -92,7 +92,7 @@ std::vector<GrammarMatch> Grammar::parseTextBuffer(const TextBuffer& tb) const {
 	std::vector<GrammarMatch> result;
 
 	for (size_t lineNo = 0; lineNo < tb.size(); lineNo++) {
-		for (size_t i = 0; i < tb[lineNo].size();) {
+		for (size_t i = 0;lineNo < tb.size() && i < tb[lineNo].size();) {
 			const char c = tb[lineNo][i];
 
 			// ignore white space
@@ -112,7 +112,7 @@ std::vector<GrammarMatch> Grammar::parseTextBuffer(const TextBuffer& tb) const {
 
 					if (startM.size() > 0) {
 						found = true;
-						size_t start = i, end = tb[lineNo].size() - 1;
+						size_t start = i, end = tb[lineNo].size();
 						i += startM[0].length();
 
 						std::regex_search(tb[lineNo].data() + i, endM, rule.endMatch);
@@ -127,14 +127,16 @@ std::vector<GrammarMatch> Grammar::parseTextBuffer(const TextBuffer& tb) const {
 							GrammarMatch firstl = { .start = start, .end = end,.matchedClass = rule.name, .line = lineNo };
 							result.push_back(firstl);
 							lineNo++;
-							while (!std::regex_search(tb[lineNo].data(), endM, rule.endMatch)) {
-								GrammarMatch midl = { .start = 0,.end = tb[lineNo].size() - 1,.matchedClass = rule.name, .line = lineNo };
+							while (lineNo < tb.size() && !std::regex_search(tb[lineNo].data(), endM, rule.endMatch)) {
+								GrammarMatch midl = { .start = 0,.end = tb[lineNo].size(),.matchedClass = rule.name, .line = lineNo };
 								result.push_back(midl);
 								lineNo++;
 							}
-							GrammarMatch lastl = { .start = 0,.end = (size_t)(endM[0].second - tb[lineNo].data()), .matchedClass = rule.name, .line = lineNo };
-							result.push_back(lastl);
-							i = lastl.end;
+							if (lineNo < tb.size()) {
+								GrammarMatch lastl = { .start = 0,.end = (size_t)(endM[0].second - tb[lineNo].data()), .matchedClass = rule.name, .line = lineNo };
+								result.push_back(lastl);
+								i = lastl.end;
+							}
 						}
 						break;
 					}
