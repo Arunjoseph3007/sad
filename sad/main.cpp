@@ -175,6 +175,33 @@ static bool delWord(GLFWwindow* window, Editor& e) {
 	e.delWord();
 	return true;
 }
+static bool insertCursorAbove(GLFWwindow* window, Editor& e) {
+	IVec2 pos = e.cursors[0].selectionEnd(e.buffer);
+
+	if (pos.y > 0) {
+		Cursor ncurs(pos.x, pos.y - 1);
+		e.cursors.insert(e.cursors.begin(), ncurs);
+	}
+
+	return true;
+}
+static bool insertCursorBelow(GLFWwindow* window, Editor& e) {
+	IVec2 pos = e.cursors[e.cursors.size() - 1].selectionEnd(e.buffer);
+
+	if (pos.y < e.buffer.size() - 1) {
+		Cursor ncurs(pos.x, pos.y + 1);
+		e.cursors.push_back(ncurs);
+	}
+
+	return true;
+}
+static bool resetCursors(GLFWwindow* window, Editor& e) {
+	IVec2 pos = e.cursors[0].selectionEnd(e.buffer);
+
+	e.cursors = { Cursor(pos.x,pos.y) };
+
+	return true;
+}
 static bool findWord(Editor& e, CommandArgs args) {
 	std::string search_query = args[0];
 
@@ -240,7 +267,6 @@ static bool replaceWord(Editor& e, CommandArgs args) {
 	// and users can search for next just by enter
 	return false;
 }
-
 
 static void SetupTheme() {}
 
@@ -426,11 +452,14 @@ export default class NewClass {
 		KeyBinding(ImGuiKey_DownArrow, Alt, moveLineDown),
 		KeyBinding(ImGuiKey_UpArrow, Alt + Shift, copyLineUp),
 		KeyBinding(ImGuiKey_DownArrow, Alt + Shift, copyLineDown),
+		KeyBinding(ImGuiKey_UpArrow, Ctrl + Shift, insertCursorAbove),
+		KeyBinding(ImGuiKey_DownArrow, Ctrl + Shift, insertCursorBelow),
 		KeyBinding(ImGuiKey_A, Ctrl, selectAll),
 		KeyBinding(ImGuiKey_Z, Ctrl, undo),
 		KeyBinding(ImGuiKey_Y, Ctrl, redo),
 		KeyBinding(ImGuiKey_Backspace, Ctrl, backspaceWord),
 		KeyBinding(ImGuiKey_Delete, Ctrl, delWord),
+		KeyBinding(ImGuiKey_Escape, 0, resetCursors),// maybe this doesnt belong here, move it down
 	};
 
 	// Main loop
