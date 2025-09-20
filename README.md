@@ -14,10 +14,14 @@ We are at a very basic stage so lower you expectations
 - Cursor position aware Undo/Redo
 - syntax highlighting
 - Basic command center
+- Hacky Multi cursor
+- Find/replace
 
 ## TODO
-- Multi cursor
-- Undo/Redo system
+- Multi cursor bugs
+  - when adding/removing lines sync cursors below
+  - when multiple cursors in same line sync them
+- Undo/Redo system enhancements
   - We are using line diff, maybe more specific diff?
   - A better way of start/end transactions, dont want to write it everywhere
 - Selecting by clicking/dragging
@@ -26,15 +30,11 @@ We are at a very basic stage so lower you expectations
 - Better UI styling
 - fix alignment issue due to `\r \n \t`
 - Text wrapping
-- searching
-  - maybe also use search by regex
-- emacs style query replace
+- find/replace using regex
 - Handle gigantic files
-- Handle line number better
 - Command system
   - we could use [sol2](https://github.com/ThePhD/sol2)
-- Syntax highlighting
-  - Preferably based on active mode
+- Synatx highlighting for many lagunages
 - auto completions
 - LSP integration
 - modding using lua
