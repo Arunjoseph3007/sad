@@ -7,10 +7,10 @@ std::ostream& operator<<(std::ostream& os, const TextBuffer& obj);
 
 struct IVec2 {
 public:
-	int x, y;
+	size_t x, y;
 
 	IVec2();
-	IVec2(int x, int y);
+	IVec2(size_t x, size_t y);
 
 	bool operator==(const IVec2& that) const;
 

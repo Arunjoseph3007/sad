@@ -54,12 +54,12 @@ public:
 		When different they behave as Selections
 	*/
 public:
-	IVec2 getCursorEnd(int idx);
-	IVec2 getGhostEnd(int idx);
-	IVec2 getCursorStart(int idx);
-	IVec2 getGhostStart(int idx);
-	void syncCusrorEnd(int idx);
-	void syncCusrorStart(int idx);
+	IVec2 getCursorEnd(size_t idx);
+	IVec2 getGhostEnd(size_t idx);
+	IVec2 getCursorStart(size_t idx);
+	IVec2 getGhostStart(size_t idx);
+	void syncCusrorEnd(size_t idx);
+	void syncCusrorStart(size_t idx);
 
 	void collapseOverlappingCursosr() {/*TODO*/ }
 
@@ -83,12 +83,12 @@ public:
 	bool end(size_t idx);
 	bool end();
 
-	int getIndentOf(int lineNo);
-	bool shouldAddIndent(int lineNo, int curPosX);
-	bool shouldDropIntoNewLine(int lineNo, int curPosX);
+	int getIndentOf(size_t lineNo);
+	bool shouldAddIndent(size_t lineNo, size_t curPosX);
+	bool shouldDropIntoNewLine(size_t lineNo, size_t curPosX);
 
-	std::string getSelectionString(int idx) const;
-	void emptySelection(int idx);
+	std::string getSelectionString(size_t idx) const;
+	void emptySelection(size_t idx);
 
 	/*
 		Editing system

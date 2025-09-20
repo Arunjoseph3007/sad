@@ -23,7 +23,7 @@ static CharType getCharType(const char& c) {
 }
 
 static void debugCur(Cursor c) {
-	printf("x: %d, y: %d, xp: %d, yp: %d\n", c.start.x, c.start.y, c.end.x, c.end.y);
+	printf("x: %zu, y: %zu, xp: %zu, yp: %zu\n", c.start.x, c.start.y, c.end.x, c.end.y);
 }
 
 Editor::Editor() {
@@ -114,24 +114,24 @@ bool Editor::redo() {
 	return true;
 }
 
-IVec2 Editor::getCursorEnd(int idx) {
+IVec2 Editor::getCursorEnd(size_t idx) {
 	return this->cursors[idx].end;
 }
-IVec2 Editor::getGhostEnd(int idx) {
+IVec2 Editor::getGhostEnd(size_t idx) {
 	return this->cursors[idx].end.getGhotsPos(this->buffer);
 }
-IVec2 Editor::getCursorStart(int idx) {
+IVec2 Editor::getCursorStart(size_t idx) {
 	return this->cursors[idx].start;
 }
-IVec2 Editor::getGhostStart(int idx) {
+IVec2 Editor::getGhostStart(size_t idx) {
 	return this->cursors[idx].start.getGhotsPos(this->buffer);
 }
 
 
-void Editor::syncCusrorEnd(int idx) {
+void Editor::syncCusrorEnd(size_t idx) {
 	this->cursors[idx].end.syncCursor(this->buffer);
 }
-void Editor::syncCusrorStart(int idx) {
+void Editor::syncCusrorStart(size_t idx) {
 	this->cursors[idx].start.syncCursor(this->buffer);
 }
 
@@ -270,7 +270,7 @@ void Editor::selectRight() {
 
 	this->collapseOverlappingCursosr();
 }
-std::string Editor::getSelectionString(int idx) const {
+std::string Editor::getSelectionString(size_t idx) const {
 	const Cursor& cursor = this->cursors[idx];
 	IVec2 selStart = cursor.selectionStart(this->buffer);
 	IVec2 selEnd = cursor.selectionEnd(this->buffer);
@@ -282,7 +282,7 @@ std::string Editor::getSelectionString(int idx) const {
 		std::string result;
 		result += this->buffer[selStart.y].substr(selStart.x);
 		result += '\n';
-		for (int i = selStart.y + 1;i < selEnd.y - 1;i++) {
+		for (size_t i = selStart.y + 1;i < selEnd.y - 1;i++) {
 			result += this->buffer[i];
 			result += '\n';
 		}
@@ -291,7 +291,7 @@ std::string Editor::getSelectionString(int idx) const {
 	}
 }
 
-void Editor::emptySelection(int idx) {
+void Editor::emptySelection(size_t idx) {
 	this->startTransaction();
 
 	IVec2 selStart = this->cursors[idx].selectionStart(this->buffer);
@@ -696,7 +696,7 @@ bool Editor::end() {
 	return true;
 }
 
-int Editor::getIndentOf(int lineNo) {
+int Editor::getIndentOf(size_t lineNo) {
 	int indentSize = 0;
 	while (indentSize < this->buffer[lineNo].size() && this->buffer[lineNo][indentSize] == ' ') indentSize++;
 	return indentSize;
@@ -706,8 +706,8 @@ static std::unordered_set<char> indentOpeners = { '(','[','{' };
 static std::unordered_set<char> indentClosers = { ')',']','}' };
 
 // TODO this might differ from exact behaviour of vscode, but is good enough for now
-bool Editor::shouldAddIndent(int lineNo, int curPosX) {
-	for (int i = curPosX - 1; i >= 0; i--) {
+bool Editor::shouldAddIndent(size_t lineNo, size_t curPosX) {
+	for (int i = (int)curPosX - 1; i >= 0; i--) {
 		if (indentOpeners.find(this->buffer[lineNo][i]) != indentOpeners.end()) {
 			return true;
 		}
@@ -718,7 +718,7 @@ bool Editor::shouldAddIndent(int lineNo, int curPosX) {
 	return false;
 }
 
-bool Editor::shouldDropIntoNewLine(int lineNo, int curPosX) {
+bool Editor::shouldDropIntoNewLine(size_t lineNo, size_t curPosX) {
 	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
