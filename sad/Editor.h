@@ -8,7 +8,7 @@ const int MAX_UNDO_HISTORY_SIZE = 100;
 
 class Editor {
 public:
-	Cursor cursor;
+	std::vector<Cursor> cursors;
 	TextBuffer buffer;
 
 	Editor();
@@ -35,7 +35,7 @@ public:
 	int transactionRefCount = 0;
 	History undoHistory, redoHistory;
 	TextBuffer oldBuffer;
-	Cursor oldCursor;
+	std::vector<Cursor> oldCursors;
 public:
 	bool startTransaction();
 	bool endTransaction();
@@ -54,14 +54,17 @@ public:
 		When different they behave as Selections
 	*/
 public:
-	IVec2 getCursorEnd();
-	IVec2 getGhostEnd();
-	IVec2 getCursorStart();
-	IVec2 getGhostStart();
-	void syncCusrorEnd();
-	void syncCusrorStart();
+	IVec2 getCursorEnd(int idx);
+	IVec2 getGhostEnd(int idx);
+	IVec2 getCursorStart(int idx);
+	IVec2 getGhostStart(int idx);
+	void syncCusrorEnd(int idx);
+	void syncCusrorStart(int idx);
+
+	void collapseOverlappingCursosr() {/*TODO*/ }
 
 	bool up();
+	bool down(size_t idx);
 	bool down();
 	bool left();
 	bool right();
@@ -75,31 +78,38 @@ public:
 	void selectRight();
 
 	bool home();
+	bool end(size_t idx);
 	bool end();
 
 	int getIndentOf(int lineNo);
 	bool shouldAddIndent(int lineNo, int curPosX);
 	bool shouldDropIntoNewLine(int lineNo, int curPosX);
 
-	std::string getSelectionString() const;
-	void emptySelection();
+	std::string getSelectionString(int idx) const;
+	void emptySelection(int idx);
 
 	/*
 		Editing system
 	*/
 public:
+	void insertBefore(const char c, size_t idx);
 	void insertBefore(const char c);
 	void insertBefore(const std::string& text);
+	void insertAfter(const char c, size_t idx);
 	void insertAfter(const char c);
 	void insertAfter(const std::string& text);
 	void charInsertBefore(int ch, bool shift);
 
+	bool backspace(size_t idx);
 	bool backspace();
 	bool backspaceWord();
+	bool del(size_t idx);
 	bool del();
 	bool delWord();
 
+	void enter(size_t idx);
 	void enter();
+	void enterAndIndent(size_t idx);
 	void enterAndIndent();
 
 	/*

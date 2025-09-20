@@ -11,7 +11,7 @@ public:
 
 	int start;
 	TextBuffer plus, minus;
-	Cursor startCursor, endCursor;
+	std::vector<Cursor> startCursors, endCursors;
 
 	Edit(int start, TextBuffer plus, TextBuffer minus) : start(start), plus(plus), minus(minus) {}
 

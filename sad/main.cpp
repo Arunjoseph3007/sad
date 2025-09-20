@@ -48,8 +48,11 @@ static ImColor getTokenColor(const std::string& matchedClass, SyntaxHighlightThe
 // Keybindings
 static bool pasteTextFromClipBoard(GLFWwindow* window, Editor& e) {
 	e.startTransaction();
-	if (e.cursor.isSelection()) {
-		e.emptySelection();
+	// something funny with pasting at end of line
+	for (size_t i = 0; i < e.cursors.size(); i++) {
+		if (e.cursors[i].isSelection()) {
+			e.emptySelection(i);
+		}
 	}
 	const char* cData = glfwGetClipboardString(window);
 	e.insertBefore(std::string(cData));
@@ -57,24 +60,29 @@ static bool pasteTextFromClipBoard(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
-	if (e.cursor.isSelection()) {
-		glfwSetClipboardString(window, e.getSelectionString().c_str());
+	hack("considering only 0th cursor in copyTextToClipBoard");
+
+	if (e.cursors[0].isSelection()) {
+		glfwSetClipboardString(window, e.getSelectionString(0).c_str());
 	}
 	else {
 		// TODO try to better copy vscode style copying
-		glfwSetClipboardString(window, e.buffer[e.getCursorStart().y].c_str());
+		glfwSetClipboardString(window, e.buffer[e.getCursorStart(0).y].c_str());
 	}
 	return true;
 }
 static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
+	hack("considering only 0th cursor in cutTextToClipBoard");
+
 	e.startTransaction();
-	if (e.cursor.isSelection()) {
-		glfwSetClipboardString(window, e.getSelectionString().c_str());
-		e.emptySelection();
+
+	if (e.cursors[0].isSelection()) {
+		glfwSetClipboardString(window, e.getSelectionString(0).c_str());
+		e.emptySelection(0);
 	}
 	else {
 		// TODO try to better copy vscode style cutting
-		int lineNo = e.getCursorStart().y;
+		int lineNo = e.getCursorStart(0).y;
 		glfwSetClipboardString(window, e.buffer[lineNo].c_str());
 		e.buffer.erase(e.buffer.begin() + lineNo);
 	}
@@ -82,11 +90,13 @@ static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool selectAll(GLFWwindow* window, Editor& e) {
-	e.cursor.start.x = 0;
-	e.cursor.start.y = 0;
+	Cursor scurs;
+	scurs.start.x = 0;
+	scurs.start.y = 0;
+	scurs.end.y = e.buffer.size() - 1;
+	scurs.end.x = e.buffer[e.buffer.size() - 1].size();
 
-	e.cursor.end.y = e.buffer.size() - 1;
-	e.cursor.end.x = e.buffer[e.buffer.size() - 1].size();
+	e.cursors = { scurs };
 	return true;
 }
 static bool moveLeftWord(GLFWwindow* window, Editor& e) {
@@ -98,8 +108,10 @@ static bool moveRightWord(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool moveLineUp(GLFWwindow* window, Editor& e) {
+	hack("considering only 0th cursor in moveLineUp");
+
 	e.startTransaction();
-	int y = e.cursor.selectionStart(e.buffer).y;
+	int y = e.cursors[0].selectionStart(e.buffer).y;
 	if (y > 0) {
 		std::string t = e.buffer[y - 1];
 		e.buffer[y - 1] = e.buffer[y];
@@ -111,8 +123,10 @@ static bool moveLineUp(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool moveLineDown(GLFWwindow* window, Editor& e) {
+	hack("considering only 0th cursor in moveLineDown");
+
 	e.startTransaction();
-	int y = e.cursor.selectionStart(e.buffer).y;
+	int y = e.cursors[0].selectionStart(e.buffer).y;
 	if (y < e.buffer.size() - 1) {
 		std::string t = e.buffer[y + 1];
 		e.buffer[y + 1] = e.buffer[y];
@@ -123,20 +137,24 @@ static bool moveLineDown(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool copyLineDown(GLFWwindow* window, Editor& e) {
+	hack("considering only 0th cursor in copyLineDown");
+
 	e.startTransaction();
 
-	int y = e.cursor.selectionStart(e.buffer).y;
-	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[y]);
+	int y = e.cursors[0].selectionStart(e.buffer).y;
+	e.buffer.insert(e.buffer.begin() + e.cursors[0].end.y, e.buffer[y]);
 	e.down();
 
 	e.endTransaction();
 	return true;
 }
 static bool copyLineUp(GLFWwindow* window, Editor& e) {
+	hack("considering only 0th cursor in copyLineUp");
+
 	e.startTransaction();
 
-	int y = e.cursor.selectionStart(e.buffer).y;
-	e.buffer.insert(e.buffer.begin() + e.cursor.end.y, e.buffer[y]);
+	int y = e.cursors[0].selectionStart(e.buffer).y;
+	e.buffer.insert(e.buffer.begin() + e.cursors[0].end.y, e.buffer[y]);
 
 	e.endTransaction();
 	return true;
@@ -160,17 +178,19 @@ static bool delWord(GLFWwindow* window, Editor& e) {
 static bool findWord(Editor& e, CommandArgs args) {
 	std::string search_query = args[0];
 
-	IVec2 gPos = e.getGhostEnd();
+	IVec2 gPos = e.getGhostEnd(0);
 	int searchStartPos = gPos.y;
 	int line = searchStartPos;
 	int offset = gPos.x;
 	do {
 		size_t found = e.buffer[line].find(search_query, offset);
 		if (found != std::string::npos) {
-			e.cursor.start.y = line;
-			e.cursor.end.y = line;
-			e.cursor.start.x = found;
-			e.cursor.end.x = found + search_query.size();
+			Cursor fcurs;
+			fcurs.start.y = line;
+			fcurs.end.y = line;
+			fcurs.start.x = found;
+			fcurs.end.x = found + search_query.size();
+			e.cursors = { fcurs };
 			break;
 		}
 
@@ -187,23 +207,25 @@ static bool replaceWord(Editor& e, CommandArgs args) {
 	std::string find = args[0];
 	std::string replace = args[1];
 
-	IVec2 gPos = e.getGhostEnd();
+	IVec2 gPos = e.getGhostEnd(0);
 	int searchStartPos = gPos.y;
 	int line = searchStartPos;
 	int offset = gPos.x;
 	do {
 		size_t found = e.buffer[line].find(find, offset);
 		if (found != std::string::npos) {
-			e.cursor.start.y = line;
-			e.cursor.end.y = line;
-			e.cursor.start.x = found;
-			e.cursor.end.x = found + find.size();
+			Cursor fcurs;
+			fcurs.start.y = line;
+			fcurs.end.y = line;
+			fcurs.start.x = found;
+			fcurs.end.x = found + find.size();
+			e.cursors = { fcurs };
 
 			e.startTransaction();
 
-			e.emptySelection();
+			e.emptySelection(0);
 			e.insertBefore(replace);
-			e.cursor.end.x -= replace.size();
+			e.cursors[0].end.x -= replace.size();
 
 			e.endTransaction();
 			break;
@@ -232,10 +254,10 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 	ImVec2 p = ImGui::GetCursorScreenPos();
 
 
-	// render cursor
-	{
+	// render cursors
+	for (size_t i = 0; i < editor.cursors.size(); i++) {
 		const int cursorWidth = 2;
-		IVec2 pos = editor.getGhostEnd();
+		IVec2 pos = editor.getGhostEnd(i);
 		int yp = p.y + pos.y * lineHeight;
 		int xp = p.x + lineNumberBarSize + pos.x * charWidth;
 		ImVec2 start(xp, yp);
@@ -252,23 +274,24 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		drawList->AddRectFilled(lstart, lend, selCol);
 		};
 
-	if (editor.cursor.isSelection()) {
-		IVec2 st = editor.cursor.selectionStart(editor.buffer);
-		IVec2 ed = editor.cursor.selectionEnd(editor.buffer);
+	for (const Cursor& cursor : editor.cursors) {
+		if (cursor.isSelection()) {
+			IVec2 st = cursor.selectionStart(editor.buffer);
+			IVec2 ed = cursor.selectionEnd(editor.buffer);
 
-		int xmin = st.x, xmax = ed.x;
-		int ymin = st.y, ymax = ed.y;
+			int xmin = st.x, xmax = ed.x;
+			int ymin = st.y, ymax = ed.y;
 
-		if (ymin == ymax) {
-			markSelectionLine(ymax, xmin, xmax);
-		}
-		else {
-			markSelectionLine(ymin, xmin, editor.buffer[ymin].size() + 1);
-			for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
-			markSelectionLine(ymax, 0, xmax);
+			if (ymin == ymax) {
+				markSelectionLine(ymax, xmin, xmax);
+			}
+			else {
+				markSelectionLine(ymin, xmin, editor.buffer[ymin].size() + 1);
+				for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
+				markSelectionLine(ymax, 0, xmax);
+			}
 		}
 	}
-
 
 	// Render line numbers
 	int maxLineLength = 0;
@@ -459,15 +482,18 @@ export default class NewClass {
 			ImGui::Text("Undo stack %d", editor.undoHistory.size());
 			ImGui::Text("Redo stack %d", editor.redoHistory.size());
 			ImGui::Text("Num Lines %d", editor.buffer.size());
-			if (editor.cursor.isSelection()) {
-				auto gps = editor.cursor.selectionStart(editor.buffer);
-				ImGui::Text("Selection Start (%d, %d)", gps.y, gps.x);
-				auto gpe = editor.cursor.selectionEnd(editor.buffer);
-				ImGui::Text("Selection End (%d, %d)", gpe.y, gpe.x);
-			}
-			else {
-				auto gp = editor.getGhostEnd();
-				ImGui::Text("Cursor (%d, %d)", gp.y, gp.x);
+
+			for (const Cursor& cursor : editor.cursors) {
+				if (cursor.isSelection()) {
+					auto gps = cursor.selectionStart(editor.buffer);
+					ImGui::Text("Selection Start (%d, %d)", gps.y, gps.x);
+					auto gpe = cursor.selectionEnd(editor.buffer);
+					ImGui::Text("Selection End (%d, %d)", gpe.y, gpe.x);
+				}
+				else {
+					auto gp = cursor.end.getGhotsPos(editor.buffer);
+					ImGui::Text("Cursor (%d, %d)", gp.y, gp.x);
+				}
 			}
 
 
@@ -648,7 +674,7 @@ export default class NewClass {
 				// if handled scroll cursor into focus
 				if (handled) {
 					//TODO currently we are only scrolling vertically
-					int curY = editor.getCursorEnd().y;
+					int curY = editor.getCursorEnd(0).y;
 
 					float scrollY = ImGui::GetScrollY();
 					float curPosY = curY * lineHeight;

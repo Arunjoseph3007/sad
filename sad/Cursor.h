@@ -14,16 +14,16 @@ public:
 
 	bool operator==(const IVec2& that) const;
 
-	void syncCursor(TextBuffer buffer);
-	IVec2 getGhotsPos(TextBuffer buffer) const;
+	void syncCursor(const TextBuffer& buffer);
+	IVec2 getGhotsPos(const TextBuffer& buffer) const;
 
-	char getPrev(TextBuffer buffer) const;
-	char getNext(TextBuffer buffer) const;
+	char getPrev(const TextBuffer& buffer) const;
+	char getNext(const TextBuffer& buffer) const;
 
-	bool up(TextBuffer buffer);
-	bool down(TextBuffer buffer);
-	bool left(TextBuffer buffer);
-	bool right(TextBuffer buffer);
+	bool up(const TextBuffer& buffer);
+	bool down(const TextBuffer& buffer);
+	bool left(const TextBuffer& buffer);
+	bool right(const TextBuffer& buffer);
 };
 
 struct Cursor {
@@ -35,9 +35,14 @@ public:
 	Cursor(int x, int y);
 
 	bool isSelection() const;
-	IVec2 selectionStart(TextBuffer buffer) const;
-	IVec2 selectionEnd(TextBuffer buffer) const;
+	IVec2 selectionStart(const TextBuffer& buffer) const;
+	IVec2 selectionEnd(const TextBuffer& buffer) const;
 
-	void collapseToSelectionStart(TextBuffer buffer);
-	void collapseToSelectionEnd(TextBuffer buffer);
+	bool up(const TextBuffer& buffer);
+	bool down(const TextBuffer& buffer);
+	bool left(const TextBuffer& buffer);
+	bool right(const TextBuffer& buffer);
+
+	void collapseToSelectionStart(const TextBuffer& buffer);
+	void collapseToSelectionEnd(const TextBuffer& buffer);
 };

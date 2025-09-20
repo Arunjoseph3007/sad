@@ -27,7 +27,7 @@ static void debugCur(Cursor c) {
 }
 
 Editor::Editor() {
-	this->cursor = Cursor(0, 0);
+	this->cursors = { Cursor(0, 0) };
 	this->buffer = { "" };
 
 	this->buffer.reserve(1024);
@@ -48,7 +48,7 @@ std::string Editor::getText() const {
 bool Editor::startTransaction() {
 	if (this->transactionRefCount == 0) {
 		this->oldBuffer = this->buffer;
-		this->oldCursor = this->cursor;
+		this->oldCursors = this->cursors;
 		this->transactionRefCount++;
 		return true;
 	}
@@ -64,11 +64,11 @@ bool Editor::endTransaction() {
 	this->redoHistory.clear();
 
 	Edit ed = Edit::diffBuffers(this->oldBuffer, this->buffer);
-	ed.startCursor = this->oldCursor;
-	ed.endCursor = this->cursor;
+	ed.startCursors = this->oldCursors;
+	ed.endCursors = this->cursors;
 	this->undoHistory.push_back(ed);
 	this->oldBuffer.clear();
-	this->oldCursor = {};
+	this->oldCursors = {};
 
 	while (this->undoHistory.size() > MAX_UNDO_HISTORY_SIZE) {
 		this->undoHistory.pop_front();
@@ -90,7 +90,7 @@ bool Editor::undo() {
 	this->redoHistory.push_back(ed);
 
 	ed.undo(this->buffer);
-	this->cursor = ed.startCursor;
+	this->cursors = ed.startCursors;
 
 	// since text changed re calculate tokens
 	this->tokens = this->grammar.parseTextBuffer(this->buffer);
@@ -106,7 +106,7 @@ bool Editor::redo() {
 	this->undoHistory.push_back(ed);
 
 	ed.redo(this->buffer);
-	this->cursor = ed.endCursor;
+	this->cursors = ed.endCursors;
 
 	// since text changed re calculate tokens
 	this->tokens = this->grammar.parseTextBuffer(this->buffer);
@@ -114,98 +114,157 @@ bool Editor::redo() {
 	return true;
 }
 
-IVec2 Editor::getCursorEnd() {
-	return this->cursor.end;
+IVec2 Editor::getCursorEnd(int idx) {
+	return this->cursors[idx].end;
 }
-IVec2 Editor::getGhostEnd() {
-	return this->cursor.end.getGhotsPos(this->buffer);
+IVec2 Editor::getGhostEnd(int idx) {
+	return this->cursors[idx].end.getGhotsPos(this->buffer);
 }
-IVec2 Editor::getCursorStart() {
-	return this->cursor.start;
+IVec2 Editor::getCursorStart(int idx) {
+	return this->cursors[idx].start;
 }
-IVec2 Editor::getGhostStart() {
-	return this->cursor.start.getGhotsPos(this->buffer);
+IVec2 Editor::getGhostStart(int idx) {
+	return this->cursors[idx].start.getGhotsPos(this->buffer);
 }
 
 
-void Editor::syncCusrorEnd() {
-	this->cursor.end.syncCursor(this->buffer);
+void Editor::syncCusrorEnd(int idx) {
+	this->cursors[idx].end.syncCursor(this->buffer);
 }
-void Editor::syncCusrorStart() {
-	this->cursor.start.syncCursor(this->buffer);
+void Editor::syncCusrorStart(int idx) {
+	this->cursors[idx].start.syncCursor(this->buffer);
 }
 
 bool Editor::up() {
-	if (this->cursor.isSelection()) {
-		this->cursor.collapseToSelectionStart(this->buffer);
-		return true;
+	for (Cursor& curs : this->cursors) {
+		if (curs.isSelection()) {
+			curs.collapseToSelectionStart(this->buffer);
+		}
+		else {
+			curs.end.up(buffer);
+			curs.start.up(buffer);
+		}
 	}
-	return cursor.end.up(buffer) && cursor.start.up(buffer);
+
+	this->collapseOverlappingCursosr();
+
+	return true; // TODO
+}
+
+bool Editor::down(size_t idx) {
+	if (this->cursors[idx].isSelection()) {
+		this->cursors[idx].collapseToSelectionEnd(this->buffer);
+
+	}
+	else {
+		this->cursors[idx].end.down(buffer);
+		this->cursors[idx].start.down(buffer);
+	}
+	return true;
 }
 
 bool Editor::down() {
-	if (this->cursor.isSelection()) {
-		this->cursor.collapseToSelectionEnd(this->buffer);
-		return true;
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->down(i);
 	}
-	return cursor.end.down(buffer) && cursor.start.down(buffer);
+
+	this->collapseOverlappingCursosr();
+
+	return true; // TODO
 }
 
 bool Editor::left() {
-	if (this->cursor.isSelection()) {
-		this->cursor.collapseToSelectionStart(this->buffer);
-		return true;
+	for (Cursor& curs : this->cursors) {
+		if (curs.isSelection()) {
+			curs.collapseToSelectionStart(this->buffer);
+		}
+		else {
+			curs.end.left(buffer);
+			curs.start.left(buffer);
+		}
 	}
-	return cursor.end.left(buffer) && cursor.start.left(buffer);
+
+	this->collapseOverlappingCursosr();
+
+	return true; // TODO
 }
 
 bool Editor::right() {
-	if (this->cursor.isSelection()) {
-		this->cursor.collapseToSelectionEnd(this->buffer);
-		return true;
+	for (Cursor& curs : this->cursors) {
+		if (curs.isSelection()) {
+			curs.collapseToSelectionEnd(this->buffer);
+		}
+		else {
+			curs.end.right(buffer);
+			curs.start.right(buffer);
+		}
 	}
-	return cursor.end.right(buffer) && cursor.start.right(buffer);
+
+	this->collapseOverlappingCursosr();
+
+	return true; // TODO
 }
 
 void Editor::leftWord() {
-	if (this->cursor.isSelection()) {
-		this->cursor.collapseToSelectionStart(this->buffer);
-	}
+	for (Cursor& curs : this->cursors) {
+		if (curs.isSelection()) {
+			curs.collapseToSelectionStart(this->buffer);
+		}
 
-	if (!this->left()) return;
+		if (!curs.left(this->buffer)) continue;
 
-	while (getCharType(this->cursor.start.getPrev(this->buffer)) == CharType::Alphabet) {
-		if (!this->left()) break;
+		while (getCharType(curs.start.getPrev(this->buffer)) == CharType::Alphabet) {
+			if (!this->left()) break;
+		}
 	}
 }
 
 void Editor::rightWord() {
-	if (this->cursor.isSelection()) {
-		this->cursor.collapseToSelectionEnd(this->buffer);
-	}
+	for (Cursor& curs : this->cursors) {
+		if (curs.isSelection()) {
+			curs.collapseToSelectionEnd(this->buffer);
+		}
 
-	if (!this->right()) return;
+		if (!curs.right(this->buffer)) continue;
 
-	while (getCharType(this->cursor.start.getNext(this->buffer)) == CharType::Alphabet) {
-		if (!this->right()) break;
+		while (getCharType(curs.start.getNext(this->buffer)) == CharType::Alphabet) {
+			if (!this->right()) break;
+		}
 	}
 }
 
 void Editor::selectUp() {
-	this->cursor.end.up(this->buffer);
+	for (Cursor& curs : this->cursors) {
+		curs.end.up(this->buffer);
+	}
+
+	this->collapseOverlappingCursosr();
 }
 void Editor::selectDown() {
-	this->cursor.end.down(this->buffer);
+	for (Cursor& curs : this->cursors) {
+		curs.end.down(this->buffer);
+	}
+
+	this->collapseOverlappingCursosr();
 }
 void Editor::selectLeft() {
-	this->cursor.end.left(this->buffer);
+	for (Cursor& curs : this->cursors) {
+		curs.end.left(this->buffer);
+	}
+
+	this->collapseOverlappingCursosr();
 }
 void Editor::selectRight() {
-	this->cursor.end.right(this->buffer);
+	for (Cursor& curs : this->cursors) {
+		curs.end.right(this->buffer);
+	}
+
+	this->collapseOverlappingCursosr();
 }
-std::string Editor::getSelectionString() const {
-	IVec2 selStart = this->cursor.selectionStart(this->buffer);
-	IVec2 selEnd = this->cursor.selectionEnd(this->buffer);
+std::string Editor::getSelectionString(int idx) const {
+	const Cursor& cursor = this->cursors[idx];
+	IVec2 selStart = cursor.selectionStart(this->buffer);
+	IVec2 selEnd = cursor.selectionEnd(this->buffer);
 
 	if (selStart.y == selEnd.y) {
 		return this->buffer[selStart.y].substr(selStart.x, selEnd.x - selStart.x);
@@ -223,13 +282,13 @@ std::string Editor::getSelectionString() const {
 	}
 }
 
-void Editor::emptySelection() {
+void Editor::emptySelection(int idx) {
 	this->startTransaction();
 
-	IVec2 selStart = this->cursor.selectionStart(this->buffer);
-	IVec2 selEnd = this->cursor.selectionEnd(this->buffer);
+	IVec2 selStart = this->cursors[idx].selectionStart(this->buffer);
+	IVec2 selEnd = this->cursors[idx].selectionEnd(this->buffer);
 
-	this->cursor.collapseToSelectionStart(this->buffer);
+	this->cursors[idx].collapseToSelectionStart(this->buffer);
 
 	if (selStart.y == selEnd.y) {
 		this->buffer[selStart.y].erase(selStart.x, selEnd.x - selStart.x);
@@ -243,21 +302,33 @@ void Editor::emptySelection() {
 	this->endTransaction();
 }
 
+void Editor::insertBefore(const char c, size_t idx) {
+	this->startTransaction();
+
+	Cursor& cursor = this->cursors[idx];
+	if (cursor.isSelection()) {
+		this->emptySelection(idx);
+	}
+	this->syncCusrorEnd(idx);
+
+	IVec2 gPos = this->getGhostEnd(idx);
+
+	this->buffer[gPos.y].insert(gPos.x, 1, c);
+
+	cursor.end.right(this->buffer);
+	cursor.start.right(this->buffer);
+
+	this->endTransaction();
+}
 
 void Editor::insertBefore(const char c) {
 	this->startTransaction();
 
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
+	// TODO handle multiple cursors in same line
+
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->insertBefore(c, i);
 	}
-	this->syncCusrorEnd();
-
-	IVec2 gPos = this->getGhostEnd();
-
-	this->buffer[gPos.y].insert(gPos.x, 1, c);
-
-	this->cursor.end.right(this->buffer);
-	this->cursor.start.right(this->buffer);
 
 	this->endTransaction();
 }
@@ -266,52 +337,64 @@ void Editor::insertBefore(const std::string& text) {
 	TextBuffer segments = splitString(text);
 	if (segments.size() == 0) return;
 
+	// TODO handle multiple cursor in same line
 	this->startTransaction();
-	for (int i = 0;i < segments[0].size();i++) {
-		this->insertBefore(segments[0][i]);
-	}
 
-	if (segments.size() > 1) this->enter();
 
-	for (int i = 1;i < segments.size() - 1;i++) {
-		this->buffer.insert(this->buffer.begin() + this->cursor.end.y, segments[i]);
-		this->end();
-		this->down();
-	}
+	for (size_t ci = 0;ci < this->cursors.size();ci++) {
+		for (int i = 0;i < segments[0].size();i++) {
+			this->insertBefore(segments[0][i], ci);
+		}
 
-	if (segments.size() > 1) {
-		for (int i = 0;i < segments[segments.size() - 1].size();i++) {
-			this->insertBefore(segments[segments.size() - 1][i]);
+		if (segments.size() > 1) this->enter(ci);
+
+		for (int i = 1;i < segments.size() - 1;i++) {
+			this->buffer.insert(this->buffer.begin() + this->cursors[ci].end.y, segments[i]);
+			this->end(ci);
+			this->down(ci);
+		}
+
+		if (segments.size() > 1) {
+			for (int i = 0;i < segments[segments.size() - 1].size();i++) {
+				this->insertBefore(segments[segments.size() - 1][i], ci);
+			}
 		}
 	}
 
 	this->endTransaction();
 }
 
-void Editor::insertAfter(const char c) {
+void Editor::insertAfter(const char c, size_t idx) {
 	this->startTransaction();
 
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
+	if (this->cursors[idx].isSelection()) {
+		this->emptySelection(idx);
 	}
-	this->syncCusrorEnd();
-	IVec2 gPos = this->getGhostEnd();
+	this->syncCusrorEnd(idx);
+	IVec2 gPos = this->getGhostEnd(idx);
 
 	this->buffer[gPos.y].insert(gPos.x, 1, c);
 
 	this->endTransaction();
 }
 
+void Editor::insertAfter(const char c) {
+	for (size_t ci = 0;ci < this->cursors.size();ci++) {
+		this->insertAfter(c, ci);
+	}
+}
+
 void Editor::insertAfter(const std::string& text) {
 	this->startTransaction();
 
-	TextBuffer segments = splitString(text);
+	// TODOOOOOOO
+	/*TextBuffer segments = splitString(text);
 	for (const std::string segment : segments) {
 		for (const char& c : segment) {
 			this->insertAfter(c);
 		}
 		this->enter();
-	}
+	}*/
 
 	this->endTransaction();
 }
@@ -366,20 +449,21 @@ void Editor::charInsertBefore(int ch, bool shift) {
 }
 
 // TODO remove closing brackets/quotes/braces... if empty
-bool Editor::backspace() {
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
+bool Editor::backspace(size_t idx) {
+	Cursor& cursor = this->cursors[idx];
+	if (cursor.isSelection()) {
+		this->emptySelection(idx);
 
 		return true;
 	}
-	IVec2 gPos = this->getGhostEnd();
-	this->syncCusrorEnd();
+	IVec2 gPos = this->getGhostEnd(idx);
+	this->syncCusrorEnd(idx);
 
 	if (gPos.x > 0) {
 		this->startTransaction();
 
-		this->cursor.end.x--;
-		this->cursor.start.x--;
+		cursor.end.x--;
+		cursor.start.x--;
 		this->buffer[gPos.y].erase(gPos.x - 1, 1);
 
 		this->endTransaction();
@@ -388,13 +472,13 @@ bool Editor::backspace() {
 	else if (gPos.y > 0) {
 		this->startTransaction();
 
-		this->cursor.end.y--;
-		this->cursor.start.y--;
-		this->cursor.end.x = this->buffer[this->cursor.end.y].size();
-		this->cursor.start.x = this->buffer[this->cursor.end.y].size();
+		cursor.end.y--;
+		cursor.start.y--;
+		cursor.end.x = this->buffer[cursor.end.y].size();
+		cursor.start.x = this->buffer[cursor.end.y].size();
 
-		this->buffer[this->cursor.end.y] += this->buffer[this->cursor.end.y + 1];
-		this->buffer.erase(this->buffer.begin() + this->cursor.end.y + 1);
+		this->buffer[cursor.end.y] += this->buffer[cursor.end.y + 1];
+		this->buffer.erase(this->buffer.begin() + cursor.end.y + 1);
 
 		this->endTransaction();
 		return true;
@@ -402,31 +486,49 @@ bool Editor::backspace() {
 	return false;
 }
 
-bool Editor::backspaceWord() {
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
-		return true;
-	}
-
+bool Editor::backspace() {
 	this->startTransaction();
 
-	if (!this->backspace()) return false;
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->backspace(i);
+	}
 
-	while (getCharType(this->cursor.start.getPrev(this->buffer)) == CharType::Alphabet) {
-		if (!this->backspace()) break;
+	this->endTransaction();
+
+	return true;
+}
+
+bool Editor::backspaceWord() {
+	this->startTransaction();
+
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		Cursor& cursor = this->cursors[i];
+		if (cursor.isSelection()) {
+			this->emptySelection(i);
+			continue;
+		}
+
+
+		if (!this->backspace(i)) continue;
+
+		while (getCharType(cursor.start.getPrev(this->buffer)) == CharType::Alphabet) {
+			if (!this->backspace(i)) break;
+		}
 	}
 
 	this->endTransaction();
 	return true;
 }
 
-bool Editor::del() {
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
+bool Editor::del(size_t idx) {
+	Cursor& cursor = this->cursors[idx];
+
+	if (cursor.isSelection()) {
+		this->emptySelection(idx);
 		return true;
 	}
-	IVec2 gPos = this->getGhostEnd();
-	this->syncCusrorEnd();
+	IVec2 gPos = this->getGhostEnd(idx);
+	this->syncCusrorEnd(idx);
 
 	if (gPos.x < this->buffer[gPos.y].size()) {
 		this->startTransaction();
@@ -439,8 +541,8 @@ bool Editor::del() {
 	else if (gPos.y < this->buffer.size() - 1) {
 		this->startTransaction();
 
-		this->buffer[this->cursor.end.y] += this->buffer[this->cursor.end.y + 1];
-		this->buffer.erase(this->buffer.begin() + this->cursor.end.y + 1);
+		this->buffer[cursor.end.y] += this->buffer[cursor.end.y + 1];
+		this->buffer.erase(this->buffer.begin() + cursor.end.y + 1);
 
 		this->endTransaction();
 		return true;
@@ -448,31 +550,47 @@ bool Editor::del() {
 	return false;
 }
 
-bool Editor::delWord() {
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
-		return true;
-	}
-
+bool Editor::del() {
 	this->startTransaction();
 
-	if (!this->del()) return false;
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->del(i);
+	}
 
-	while (getCharType(this->cursor.start.getNext(this->buffer)) == CharType::Alphabet) {
-		if (!this->del()) break;
+	this->endTransaction();
+
+	return true;
+}
+
+bool Editor::delWord() {
+	this->startTransaction();
+
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		if (this->cursors[i].isSelection()) {
+			this->emptySelection(i);
+			continue;
+		}
+
+		if (!this->del()) continue;
+
+		while (getCharType(this->cursors[i].start.getNext(this->buffer)) == CharType::Alphabet) {
+			if (!this->del()) break;
+		}
 	}
 
 	this->endTransaction();
 	return true;
 }
 
-void Editor::enter() {
+void Editor::enter(size_t idx) {
 	this->startTransaction();
 
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
+	Cursor& cursor = this->cursors[idx];
+
+	if (cursor.isSelection()) {
+		this->emptySelection(idx);
 	}
-	IVec2 gPos = this->getGhostEnd();
+	IVec2 gPos = this->getGhostEnd(idx);
 
 	std::string before = this->buffer[gPos.y].substr(0, gPos.x);
 	std::string after = this->buffer[gPos.y].substr(gPos.x);
@@ -480,21 +598,32 @@ void Editor::enter() {
 	this->buffer[gPos.y] = before;
 	this->buffer.insert(this->buffer.begin() + gPos.y + 1, after);
 
-	this->cursor.end.y++;
-	this->cursor.start.y++;
-	this->cursor.end.x = 0;
-	this->cursor.start.x = 0;
+	cursor.end.y++;
+	cursor.start.y++;
+	cursor.end.x = 0;
+	cursor.start.x = 0;
 
 	this->endTransaction();
 }
 
-void Editor::enterAndIndent() {
+void Editor::enter() {
 	this->startTransaction();
 
-	if (this->cursor.isSelection()) {
-		this->emptySelection();
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->enter(i);
 	}
-	IVec2 gPos = this->getGhostEnd();
+
+	this->endTransaction();
+}
+
+void Editor::enterAndIndent(size_t idx) {
+	this->startTransaction();
+
+	Cursor& cursor = this->cursors[idx];
+	if (cursor.isSelection()) {
+		this->emptySelection(idx);
+	}
+	IVec2 gPos = this->getGhostEnd(idx);
 
 	int indentSize = this->getIndentOf(gPos.y);
 	bool shouldAddIndent = this->shouldAddIndent(gPos.y, gPos.x);
@@ -513,28 +642,48 @@ void Editor::enterAndIndent() {
 		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation + after);
 	}
 
-	this->cursor.end.y++;
-	this->cursor.start.y++;
-	this->cursor.end.x = indentation.size();
-	this->cursor.start.x = indentation.size();
+	cursor.end.y++;
+	cursor.start.y++;
+	cursor.end.x = indentation.size();
+	cursor.start.x = indentation.size();
+
+	this->endTransaction();
+}
+
+void Editor::enterAndIndent() {
+	this->startTransaction();
+
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->enterAndIndent(i);
+	}
 
 	this->endTransaction();
 }
 
 bool Editor::home() {
-	if (this->cursor.end.x == 0) {
+	TODO();
+	/*if (this->cursor.end.x == 0) {
 		return false;
 	}
 	this->cursor.end.x = 0;
-	this->cursor.start.x = 0;
+	this->cursor.start.x = 0;*/
 	return true;
 }
-bool Editor::end() {
-	if (this->cursor.end.x == this->buffer[this->cursor.end.y].size()) {
+bool Editor::end(size_t idx) {
+	Cursor& cursor = this->cursors[idx];
+	if (cursor.end.x == this->buffer[cursor.end.y].size()) {
 		return false;
 	}
-	this->cursor.end.x = this->buffer[this->cursor.end.y].size();
-	this->cursor.start.x = this->buffer[this->cursor.end.y].size();
+	cursor.end.x = this->buffer[cursor.end.y].size();
+	cursor.start.x = this->buffer[cursor.end.y].size();
+	return true;
+}
+
+bool Editor::end() {
+	for (size_t i = 0; i < this->cursors.size(); i++) {
+		this->end(i);
+	}
+
 	return true;
 }
 
