@@ -707,7 +707,7 @@ static std::unordered_set<char> indentClosers = { ')',']','}' };
 
 // TODO this might differ from exact behaviour of vscode, but is good enough for now
 bool Editor::shouldAddIndent(size_t lineNo, size_t curPosX) {
-	for (int i = (int)curPosX - 1; i >= 0; i--) {
+	for (int i = (int)(curPosX - 1); i >= 0; i--) {
 		if (indentOpeners.find(this->buffer[lineNo][i]) != indentOpeners.end()) {
 			return true;
 		}
