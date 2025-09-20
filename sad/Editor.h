@@ -66,7 +66,9 @@ public:
 	bool up();
 	bool down(size_t idx);
 	bool down();
+	bool left(size_t idx);
 	bool left();
+	bool right(size_t idx);
 	bool right();
 
 	void leftWord();

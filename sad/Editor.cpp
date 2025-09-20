@@ -172,16 +172,19 @@ bool Editor::down() {
 
 	return true; // TODO
 }
-
+bool Editor::left(size_t idx) {
+	if (this->cursors[idx].isSelection()) {
+		this->cursors[idx].collapseToSelectionStart(this->buffer);
+	}
+	else {
+		this->cursors[idx].end.left(buffer);
+		this->cursors[idx].start.left(buffer);
+	}
+	return true;
+}
 bool Editor::left() {
-	for (Cursor& curs : this->cursors) {
-		if (curs.isSelection()) {
-			curs.collapseToSelectionStart(this->buffer);
-		}
-		else {
-			curs.end.left(buffer);
-			curs.start.left(buffer);
-		}
+	for (size_t ci = 0;ci < this->cursors.size();ci++) {
+		this->left(ci);
 	}
 
 	this->collapseOverlappingCursosr();
@@ -189,15 +192,19 @@ bool Editor::left() {
 	return true; // TODO
 }
 
+bool Editor::right(size_t idx) {
+	if (this->cursors[idx].isSelection()) {
+		this->cursors[idx].collapseToSelectionEnd(this->buffer);
+	}
+	else {
+		this->cursors[idx].end.right(buffer);
+		this->cursors[idx].start.right(buffer);
+	}
+	return true;
+}
 bool Editor::right() {
-	for (Cursor& curs : this->cursors) {
-		if (curs.isSelection()) {
-			curs.collapseToSelectionEnd(this->buffer);
-		}
-		else {
-			curs.end.right(buffer);
-			curs.start.right(buffer);
-		}
+	for (size_t ci = 0;ci < this->cursors.size();ci++) {
+		this->right(ci);
 	}
 
 	this->collapseOverlappingCursosr();
@@ -206,7 +213,8 @@ bool Editor::right() {
 }
 
 void Editor::leftWord() {
-	for (Cursor& curs : this->cursors) {
+	for (size_t ci = 0;ci < this->cursors.size();ci++) {
+		Cursor& curs = this->cursors[ci];
 		if (curs.isSelection()) {
 			curs.collapseToSelectionStart(this->buffer);
 		}
@@ -214,13 +222,14 @@ void Editor::leftWord() {
 		if (!curs.left(this->buffer)) continue;
 
 		while (getCharType(curs.start.getPrev(this->buffer)) == CharType::Alphabet) {
-			if (!this->left()) break;
+			if (!this->left(ci)) break;
 		}
 	}
 }
 
 void Editor::rightWord() {
-	for (Cursor& curs : this->cursors) {
+	for (size_t ci = 0;ci < this->cursors.size();ci++) {
+		Cursor& curs = this->cursors[ci];
 		if (curs.isSelection()) {
 			curs.collapseToSelectionEnd(this->buffer);
 		}
@@ -228,7 +237,7 @@ void Editor::rightWord() {
 		if (!curs.right(this->buffer)) continue;
 
 		while (getCharType(curs.start.getNext(this->buffer)) == CharType::Alphabet) {
-			if (!this->right()) break;
+			if (!this->right(ci)) break;
 		}
 	}
 }
