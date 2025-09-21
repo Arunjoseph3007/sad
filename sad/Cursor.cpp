@@ -103,7 +103,7 @@ bool IVec2::right(const TextBuffer& buffer) {
 	return false;
 }
 
-Cursor::Cursor(int cx, int cy) {
+Cursor::Cursor(size_t cx, size_t cy) {
 	this->start = IVec2(cx, cy);
 	this->end = IVec2(cx, cy);
 }

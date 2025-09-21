@@ -32,7 +32,7 @@ public:
 	IVec2 end;
 
 	Cursor();
-	Cursor(int x, int y);
+	Cursor(size_t x, size_t y);
 
 	bool isSelection() const;
 	IVec2 selectionStart(const TextBuffer& buffer) const;

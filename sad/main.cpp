@@ -82,7 +82,7 @@ static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
 	}
 	else {
 		// TODO try to better copy vscode style cutting
-		int lineNo = e.getCursorStart(0).y;
+		size_t lineNo = e.getCursorStart(0).y;
 		glfwSetClipboardString(window, e.buffer[lineNo].c_str());
 		e.buffer.erase(e.buffer.begin() + lineNo);
 	}
@@ -111,7 +111,7 @@ static bool moveLineUp(GLFWwindow* window, Editor& e) {
 	hack("considering only 0th cursor in moveLineUp");
 
 	e.startTransaction();
-	int y = e.cursors[0].selectionStart(e.buffer).y;
+	size_t y = e.cursors[0].selectionStart(e.buffer).y;
 	if (y > 0) {
 		std::string t = e.buffer[y - 1];
 		e.buffer[y - 1] = e.buffer[y];
@@ -126,7 +126,7 @@ static bool moveLineDown(GLFWwindow* window, Editor& e) {
 	hack("considering only 0th cursor in moveLineDown");
 
 	e.startTransaction();
-	int y = e.cursors[0].selectionStart(e.buffer).y;
+	size_t y = e.cursors[0].selectionStart(e.buffer).y;
 	if (y < e.buffer.size() - 1) {
 		std::string t = e.buffer[y + 1];
 		e.buffer[y + 1] = e.buffer[y];
@@ -141,7 +141,7 @@ static bool copyLineDown(GLFWwindow* window, Editor& e) {
 
 	e.startTransaction();
 
-	int y = e.cursors[0].selectionStart(e.buffer).y;
+	size_t y = e.cursors[0].selectionStart(e.buffer).y;
 	e.buffer.insert(e.buffer.begin() + e.cursors[0].end.y, e.buffer[y]);
 	e.down();
 
@@ -153,7 +153,7 @@ static bool copyLineUp(GLFWwindow* window, Editor& e) {
 
 	e.startTransaction();
 
-	int y = e.cursors[0].selectionStart(e.buffer).y;
+	size_t y = e.cursors[0].selectionStart(e.buffer).y;
 	e.buffer.insert(e.buffer.begin() + e.cursors[0].end.y, e.buffer[y]);
 
 	e.endTransaction();
@@ -206,9 +206,9 @@ static bool findWord(Editor& e, CommandArgs args) {
 	std::string search_query = args[0];
 
 	IVec2 gPos = e.getGhostEnd(0);
-	int searchStartPos = gPos.y;
-	int line = searchStartPos;
-	int offset = gPos.x;
+	size_t searchStartPos = gPos.y;
+	size_t line = searchStartPos;
+	size_t offset = gPos.x;
 	do {
 		size_t found = e.buffer[line].find(search_query, offset);
 		if (found != std::string::npos) {
@@ -235,9 +235,9 @@ static bool replaceWord(Editor& e, CommandArgs args) {
 	std::string replace = args[1];
 
 	IVec2 gPos = e.getGhostEnd(0);
-	int searchStartPos = gPos.y;
-	int line = searchStartPos;
-	int offset = gPos.x;
+	size_t searchStartPos = gPos.y;
+	size_t line = searchStartPos;
+	size_t offset = gPos.x;
 	do {
 		size_t found = e.buffer[line].find(find, offset);
 		if (found != std::string::npos) {
@@ -270,9 +270,9 @@ static bool replaceWord(Editor& e, CommandArgs args) {
 
 static void SetupTheme() {}
 
-static int lineNumberMode = 0;
-const int lineHeight = 24;
-const int charWidth = 10;
+static const int lineNumberMode = 0;
+static const int lineHeight = 24;
+static const int charWidth = 10;
 
 static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style) {
 	const int lineNumberBarSize = 40;
@@ -284,15 +284,15 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 	for (size_t i = 0; i < editor.cursors.size(); i++) {
 		const int cursorWidth = 2;
 		IVec2 pos = editor.getGhostEnd(i);
-		int yp = p.y + pos.y * lineHeight;
-		int xp = p.x + lineNumberBarSize + pos.x * charWidth;
+		float yp = p.y + pos.y * lineHeight;
+		float xp = p.x + lineNumberBarSize + pos.x * charWidth;
 		ImVec2 start(xp, yp);
 		ImVec2 end(start.x + cursorWidth, start.y + lineHeight);
 		drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
 	}
 
 	// render selection
-	auto markSelectionLine = [&](int y, int sx, int ex) {
+	auto markSelectionLine = [&](size_t y, size_t sx, size_t ex) {
 		ImVec2 lstart(lineNumberBarSize + p.x + sx * charWidth, p.y + y * lineHeight);
 		ImVec2 lend(lineNumberBarSize + p.x + ex * charWidth, lstart.y + lineHeight);
 		ImColor selCol = ImColor(1.0f, 1.0f, 1.0f, 0.3f);
@@ -305,28 +305,28 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 			IVec2 st = cursor.selectionStart(editor.buffer);
 			IVec2 ed = cursor.selectionEnd(editor.buffer);
 
-			int xmin = st.x, xmax = ed.x;
-			int ymin = st.y, ymax = ed.y;
+			size_t xmin = st.x, xmax = ed.x;
+			size_t ymin = st.y, ymax = ed.y;
 
 			if (ymin == ymax) {
 				markSelectionLine(ymax, xmin, xmax);
 			}
 			else {
 				markSelectionLine(ymin, xmin, editor.buffer[ymin].size() + 1);
-				for (int i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
+				for (size_t i = ymin + 1;i < ymax;i++) markSelectionLine(i, 0, editor.buffer[i].size() + 1);
 				markSelectionLine(ymax, 0, xmax);
 			}
 		}
 	}
 
 	// Render line numbers
-	int maxLineLength = 0;
+	size_t maxLineLength = 0;
 	char lineNoBuffer[10];
 	for (int lineNo = 0;lineNo < editor.buffer.size();lineNo++) {
 		sprintf_s(lineNoBuffer, "%d", lineNo + 1);
 
-		int yp = p.y + lineNo * lineHeight;
-		int xp = p.x;
+		float yp = p.y + lineNo * lineHeight;
+		float xp = p.x;
 		drawList->AddText(ImVec2(xp, yp), lineNoCol, lineNoBuffer);
 		xp += lineNumberBarSize;
 
@@ -337,8 +337,8 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 	for (const GrammarMatch& token : editor.tokens) {
 		if (token.matchedClass == "whitespace") continue;
 
-		int xp = p.x + lineNumberBarSize + token.start * charWidth;
-		int yp = p.y + token.line * lineHeight;
+		float xp = p.x + lineNumberBarSize + token.start * charWidth;
+		float yp = p.y + token.line * lineHeight;
 		drawList->AddText(
 			ImVec2(xp, yp),
 			getTokenColor(token.matchedClass, SyntaxTheme),
@@ -347,7 +347,9 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		);
 	}
 
-	ImVec2 scrollSpace(maxLineLength * charWidth + lineNumberBarSize + 100, editor.buffer.size() * lineHeight);
+	ImVec2 scrollSpace(
+		(float)(maxLineLength * charWidth + lineNumberBarSize + 100),
+		(float)(editor.buffer.size() * lineHeight));
 	ImGui::Dummy(scrollSpace);
 }
 
@@ -374,10 +376,10 @@ int main(int, char**) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
+	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;   // Enable Multi-Viewport / Platform Windows
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -703,10 +705,10 @@ export default class NewClass {
 				// if handled scroll cursor into focus
 				if (handled) {
 					//TODO currently we are only scrolling vertically
-					int curY = editor.getCursorEnd(0).y;
+					size_t curY = editor.getCursorEnd(0).y;
 
 					float scrollY = ImGui::GetScrollY();
-					float curPosY = curY * lineHeight;
+					float curPosY = (float)curY * lineHeight;
 					float screenY = ImGui::GetWindowContentRegionMin().y;
 
 					if (curPosY < scrollY || curPosY > scrollY + screenY) {
