@@ -8,9 +8,6 @@ const int MAX_UNDO_HISTORY_SIZE = 100;
 
 class Editor {
 public:
-	std::vector<Cursor> cursors;
-	TextBuffer buffer;
-
 	Editor();
 	void debug();
 	std::string getText() const;
@@ -94,12 +91,18 @@ public:
 		Editing system
 	*/
 public:
+	std::vector<Cursor> cursors;
+	TextBuffer buffer;
+private:
+	void insertLine(size_t idx, const std::string& line);
+public:
 	void insertBefore(const char c, size_t idx);
 	void insertBefore(const char c);
+	void insertBefore(const TextBuffer& segments, size_t idx);
 	void insertBefore(const std::string& text);
+
 	void insertAfter(const char c, size_t idx);
 	void insertAfter(const char c);
-	void insertAfter(const std::string& text);
 	void charInsertBefore(int ch, bool shift);
 
 	bool backspace(size_t idx);

@@ -311,6 +311,20 @@ void Editor::emptySelection(size_t idx) {
 	this->endTransaction();
 }
 
+void Editor::insertLine(size_t idx, const std::string& line) {
+	// TODO not sure if this should be a transaction or not
+	this->buffer.insert(this->buffer.begin() + idx, line);
+
+	for (Cursor& curs : this->cursors) {
+		if (curs.start.y >= idx) {
+			curs.start.y++;
+		}
+		if (curs.end.y >= idx) {
+			curs.end.y++;
+		}
+	}
+}
+
 void Editor::insertBefore(const char c, size_t idx) {
 	this->startTransaction();
 
@@ -327,6 +341,17 @@ void Editor::insertBefore(const char c, size_t idx) {
 	cursor.end.right(this->buffer);
 	cursor.start.right(this->buffer);
 
+
+	// Realign cursors
+	for (Cursor& scurs : this->cursors) {
+		if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
+			scurs.start.x++;
+		}
+		if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
+			scurs.end.x++;
+		}
+	}
+
 	this->endTransaction();
 }
 
@@ -342,32 +367,46 @@ void Editor::insertBefore(const char c) {
 	this->endTransaction();
 }
 
+void Editor::insertBefore(const TextBuffer& segments, size_t idx) {
+	this->startTransaction();
+
+	Cursor& cursor = this->cursors[idx];
+	// make sure its empty
+	if (cursor.isSelection()) {
+		this->emptySelection(idx);
+	}
+
+	// insert first line
+	for (int i = 0;i < segments[0].size();i++) {
+		this->insertBefore(segments[0][i], idx);
+	}
+
+	// if multiline, enter at cursor
+	if (segments.size() > 1) this->enter(idx);
+
+	// enter all full line
+	for (int i = 1;i < segments.size() - 1;i++) {
+		this->insertLine(cursor.end.y, segments[i]);
+	}
+
+	// insert last line
+	if (segments.size() > 1) {
+		for (int i = 0;i < segments[segments.size() - 1].size();i++) {
+			this->insertBefore(segments[segments.size() - 1][i], cursor.end.y);
+		}
+	}
+
+	this->endTransaction();
+}
 void Editor::insertBefore(const std::string& text) {
 	TextBuffer segments = splitString(text);
 	if (segments.size() == 0) return;
 
-	// TODO handle multiple cursor in same line
 	this->startTransaction();
 
 
 	for (size_t ci = 0;ci < this->cursors.size();ci++) {
-		for (int i = 0;i < segments[0].size();i++) {
-			this->insertBefore(segments[0][i], ci);
-		}
-
-		if (segments.size() > 1) this->enter(ci);
-
-		for (int i = 1;i < segments.size() - 1;i++) {
-			this->buffer.insert(this->buffer.begin() + this->cursors[ci].end.y, segments[i]);
-			this->end(ci);
-			this->down(ci);
-		}
-
-		if (segments.size() > 1) {
-			for (int i = 0;i < segments[segments.size() - 1].size();i++) {
-				this->insertBefore(segments[segments.size() - 1][i], ci);
-			}
-		}
+		this->insertBefore(segments, ci);
 	}
 
 	this->endTransaction();
@@ -391,21 +430,6 @@ void Editor::insertAfter(const char c) {
 	for (size_t ci = 0;ci < this->cursors.size();ci++) {
 		this->insertAfter(c, ci);
 	}
-}
-
-void Editor::insertAfter(const std::string& text) {
-	this->startTransaction();
-
-	// TODOOOOOOO
-	/*TextBuffer segments = splitString(text);
-	for (const std::string segment : segments) {
-		for (const char& c : segment) {
-			this->insertAfter(c);
-		}
-		this->enter();
-	}*/
-
-	this->endTransaction();
 }
 
 std::unordered_map<ImGuiKey, std::pair<char, char>> SpecialKeyMapping = {
@@ -595,7 +619,6 @@ void Editor::enter(size_t idx) {
 	this->startTransaction();
 
 	Cursor& cursor = this->cursors[idx];
-
 	if (cursor.isSelection()) {
 		this->emptySelection(idx);
 	}
@@ -607,10 +630,27 @@ void Editor::enter(size_t idx) {
 	this->buffer[gPos.y] = before;
 	this->buffer.insert(this->buffer.begin() + gPos.y + 1, after);
 
-	cursor.end.y++;
-	cursor.start.y++;
-	cursor.end.x = 0;
-	cursor.start.x = 0;
+	// realign cursors after that line
+	for (Cursor& scurs : this->cursors) {
+		if (scurs.start.y > gPos.y) {
+			scurs.start.y++;
+		}
+		if (scurs.end.y > gPos.y) {
+			scurs.end.y++;
+		}
+	}
+
+	// realign cursors on same line
+	for (Cursor& scurs : this->cursors) {
+		if (scurs.start.y == gPos.y && scurs.start.x >= gPos.x) {
+			scurs.start.x -= gPos.x;
+			scurs.start.y++;
+		}
+		if (scurs.end.y == gPos.y && scurs.end.x >= gPos.x) {
+			scurs.end.x -= gPos.x;
+			scurs.end.y++;
+		}
+	}
 
 	this->endTransaction();
 }
