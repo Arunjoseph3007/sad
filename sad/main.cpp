@@ -634,8 +634,7 @@ export default class NewClass {
 				}
 				else if (ImGui::IsKeyPressed(ImGuiKey_Enter)) {
 					std::cout << "Enter\n";
-					//editor.enterAndIndent();
-					editor.enter();
+					editor.enterAndIndent();
 				}
 				else if (ImGui::IsKeyPressed(ImGuiKey_Home)) {
 					std::cout << "Home\n";

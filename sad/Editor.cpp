@@ -423,6 +423,16 @@ void Editor::insertAfter(const char c, size_t idx) {
 
 	this->buffer[gPos.y].insert(gPos.x, 1, c);
 
+	// Realign cursors
+	Cursor& cursor = this->cursors[idx];
+	for (Cursor& scurs : this->cursors) {
+		if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
+			scurs.start.x++;
+		}
+		if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
+			scurs.end.x++;
+		}
+	}
 	this->endTransaction();
 }
 
@@ -678,23 +688,20 @@ void Editor::enterAndIndent(size_t idx) {
 	bool shouldAddIndent = this->shouldAddIndent(gPos.y, gPos.x);
 	bool shouldDropIntoNewLine = this->shouldDropIntoNewLine(gPos.y, gPos.x);
 
-	std::string before = this->buffer[gPos.y].substr(0, gPos.x);
-	std::string indentation = std::string(shouldAddIndent ? indentSize + 2 : indentSize, ' ');
-	std::string after = this->buffer[gPos.y].substr(gPos.x);
+	this->enter(idx);
+	repeat(indentSize) this->insertBefore(' ', idx);
 
-	this->buffer[gPos.y] = before;
 	if (shouldDropIntoNewLine) {
-		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation);
-		this->buffer.insert(this->buffer.begin() + gPos.y + 2, std::string(indentSize, ' ') + after);
-	}
-	else {
-		this->buffer.insert(this->buffer.begin() + gPos.y + 1, indentation + after);
-	}
+		repeat(2) this->insertBefore(' ', idx);
+		this->enter(idx);
 
-	cursor.end.y++;
-	cursor.start.y++;
-	cursor.end.x = indentation.size();
-	cursor.start.x = indentation.size();
+		repeat(indentSize) this->insertBefore(' ', idx);
+
+		cursor.start.y--;
+		cursor.end.y--;
+		cursor.start.x = indentSize + 2;
+		cursor.end.x = indentSize + 2;
+	}
 
 	this->endTransaction();
 }
