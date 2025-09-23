@@ -58,7 +58,7 @@ public:
 	void syncCusrorEnd(size_t idx);
 	void syncCusrorStart(size_t idx);
 
-	void collapseOverlappingCursosr() {/*TODO*/ }
+	void collapseOverlappingCursosr() {hack("Empty implmentation for collapseOverlappingCursosr") }
 
 	bool up();
 	bool down(size_t idx);

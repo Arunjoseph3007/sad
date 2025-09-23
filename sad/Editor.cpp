@@ -162,7 +162,6 @@ bool Editor::down(size_t idx) {
 	}
 	return true;
 }
-
 bool Editor::down() {
 	for (size_t i = 0;i < this->cursors.size();i++) {
 		this->down(i);
@@ -172,6 +171,7 @@ bool Editor::down() {
 
 	return true; // TODO
 }
+
 bool Editor::left(size_t idx) {
 	if (this->cursors[idx].isSelection()) {
 		this->cursors[idx].collapseToSelectionStart(this->buffer);
@@ -270,6 +270,7 @@ void Editor::selectRight() {
 
 	this->collapseOverlappingCursosr();
 }
+
 std::string Editor::getSelectionString(size_t idx) const {
 	const Cursor& cursor = this->cursors[idx];
 	IVec2 selStart = cursor.selectionStart(this->buffer);
@@ -354,7 +355,6 @@ void Editor::insertBefore(const char c, size_t idx) {
 
 	this->endTransaction();
 }
-
 void Editor::insertBefore(const char c) {
 	this->startTransaction();
 
@@ -435,7 +435,6 @@ void Editor::insertAfter(const char c, size_t idx) {
 	}
 	this->endTransaction();
 }
-
 void Editor::insertAfter(const char c) {
 	for (size_t ci = 0;ci < this->cursors.size();ci++) {
 		this->insertAfter(c, ci);
@@ -474,6 +473,7 @@ std::unordered_map<char, char> ClosablesChars = {
 	{'[', ']'},
 	{'{', '}'},
 };
+
 void Editor::charInsertBefore(int ch, bool shift) {
 	this->startTransaction();
 
@@ -499,6 +499,7 @@ bool Editor::backspace(size_t idx) {
 
 		return true;
 	}
+
 	IVec2 gPos = this->getGhostEnd(idx);
 	this->syncCusrorEnd(idx);
 
@@ -509,26 +510,51 @@ bool Editor::backspace(size_t idx) {
 		cursor.start.x--;
 		this->buffer[gPos.y].erase(gPos.x - 1, 1);
 
+		// Realign cursors
+		for (Cursor& scurs : this->cursors) {
+			if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
+				scurs.start.x--;
+			}
+			if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
+				scurs.end.x--;
+			}
+		}
+
 		this->endTransaction();
 		return true;
 	}
 	else if (gPos.y > 0) {
 		this->startTransaction();
 
-		cursor.end.y--;
-		cursor.start.y--;
-		cursor.end.x = this->buffer[cursor.end.y].size();
-		cursor.start.x = this->buffer[cursor.end.y].size();
+		size_t prevLineLen = this->buffer[cursor.end.y - 1].size();
+		// Realign cursors in this line
+		for (Cursor& scurs : this->cursors) {
+			if (scurs.start.y == cursor.start.y) {
+				scurs.start.x += prevLineLen;
+			}
+			if (scurs.end.y == cursor.start.y) {
+				scurs.end.x += prevLineLen;
+			}
+		}
 
-		this->buffer[cursor.end.y] += this->buffer[cursor.end.y + 1];
-		this->buffer.erase(this->buffer.begin() + cursor.end.y + 1);
+		// append to previous line, and remove it
+		this->buffer[cursor.end.y - 1] += this->buffer[cursor.end.y];
+		this->buffer.erase(this->buffer.begin() + cursor.end.y);
+
+		for (Cursor& scurs : this->cursors) {
+			if (scurs.start.y >= cursor.start.y) {
+				scurs.start.y--;
+			}
+			if (scurs.end.y >= cursor.start.y) {
+				scurs.end.y--;
+			}
+		}
 
 		this->endTransaction();
 		return true;
 	}
 	return false;
 }
-
 bool Editor::backspace() {
 	this->startTransaction();
 
@@ -592,7 +618,6 @@ bool Editor::del(size_t idx) {
 	}
 	return false;
 }
-
 bool Editor::del() {
 	this->startTransaction();
 
@@ -664,7 +689,6 @@ void Editor::enter(size_t idx) {
 
 	this->endTransaction();
 }
-
 void Editor::enter() {
 	this->startTransaction();
 
@@ -705,7 +729,6 @@ void Editor::enterAndIndent(size_t idx) {
 
 	this->endTransaction();
 }
-
 void Editor::enterAndIndent() {
 	this->startTransaction();
 
@@ -725,6 +748,7 @@ bool Editor::home() {
 	this->cursor.start.x = 0;*/
 	return true;
 }
+
 bool Editor::end(size_t idx) {
 	Cursor& cursor = this->cursors[idx];
 	if (cursor.end.x == this->buffer[cursor.end.y].size()) {
@@ -734,7 +758,6 @@ bool Editor::end(size_t idx) {
 	cursor.start.x = this->buffer[cursor.end.y].size();
 	return true;
 }
-
 bool Editor::end() {
 	for (size_t i = 0; i < this->cursors.size(); i++) {
 		this->end(i);
