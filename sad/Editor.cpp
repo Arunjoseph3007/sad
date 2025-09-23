@@ -75,7 +75,7 @@ bool Editor::endTransaction() {
 	}
 
 	// after change re calculate tokens
-	this->tokens = this->grammar.parseTextBuffer(this->buffer);
+	this->tokenize();
 
 	return true;
 }
@@ -93,7 +93,7 @@ bool Editor::undo() {
 	this->cursors = ed.startCursors;
 
 	// since text changed re calculate tokens
-	this->tokens = this->grammar.parseTextBuffer(this->buffer);
+	this->tokenize();
 
 	return true;
 }
@@ -109,7 +109,7 @@ bool Editor::redo() {
 	this->cursors = ed.endCursors;
 
 	// since text changed re calculate tokens
-	this->tokens = this->grammar.parseTextBuffer(this->buffer);
+	this->tokenize();
 
 	return true;
 }
@@ -792,8 +792,13 @@ bool Editor::shouldDropIntoNewLine(size_t lineNo, size_t curPosX) {
 	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
-void Editor::loadGrammar(Grammar grammar) {
+void Editor::loadGrammar(const Grammar& grammar) {
 	this->grammar = grammar;
+	this->tokenize();
+}
+
+void Editor::tokenize() {
+	this->tokens = this->grammar.parseTextBuffer(this->buffer);
 }
 
 void Editor::debug() {

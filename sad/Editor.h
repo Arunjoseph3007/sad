@@ -9,6 +9,7 @@ const int MAX_UNDO_HISTORY_SIZE = 100;
 class Editor {
 public:
 	Editor();
+
 	void debug();
 	std::string getText() const;
 
@@ -58,7 +59,7 @@ public:
 	void syncCusrorEnd(size_t idx);
 	void syncCusrorStart(size_t idx);
 
-	void collapseOverlappingCursosr() {hack("Empty implmentation for collapseOverlappingCursosr") }
+	void collapseOverlappingCursosr() { hack("Empty implmentation for collapseOverlappingCursosr"); }
 
 	bool up();
 	bool down(size_t idx);
@@ -80,15 +81,19 @@ public:
 	bool end(size_t idx);
 	bool end();
 
-	int getIndentOf(size_t lineNo);
-	bool shouldAddIndent(size_t lineNo, size_t curPosX);
-	bool shouldDropIntoNewLine(size_t lineNo, size_t curPosX);
-
 	std::string getSelectionString(size_t idx) const;
 	void emptySelection(size_t idx);
 
 	/*
 		Editing system
+
+		How to work with multiple cursors?
+		Each function has to realign and manipulate the cursors such that it makes sense before returning.
+		This means that as long as you are using functions you wont have to worry about managing cursors.
+
+		It is only when you directly manipulate buffer or cursors that you are responsible for
+		realigning not only the current cursor but also other cursors so that it is all good.
+		When introducing keep in mind that it should manage its own cursors.
 	*/
 public:
 	std::vector<Cursor> cursors;
@@ -117,6 +122,10 @@ public:
 	void enterAndIndent(size_t idx);
 	void enterAndIndent();
 
+	int getIndentOf(size_t lineNo);
+	bool shouldAddIndent(size_t lineNo, size_t curPosX);
+	bool shouldDropIntoNewLine(size_t lineNo, size_t curPosX);
+
 	/*
 		Syntax highlighting stuff
 		this really should be here but we are using it just to move fast
@@ -127,5 +136,6 @@ private:
 public:
 	std::vector<GrammarMatch> tokens;
 
-	void loadGrammar(Grammar grammar);
+	void loadGrammar(const Grammar& grammar);
+	void tokenize();
 };
