@@ -33,6 +33,12 @@ Editor::Editor() {
 	this->buffer.reserve(1024);
 }
 
+void Editor::debug() {
+	std::cout << "--------------------------\n";
+	for (const std::string& l : buffer) std::cout << l.size() << " : " << l << "\n";
+	std::cout << "--------------------------\n";
+}
+
 std::string Editor::getText() const {
 	std::string result;
 
@@ -45,6 +51,9 @@ std::string Editor::getText() const {
 	return result;
 }
 
+/*===========================
+* UNDO/REDO 
+===========================*/
 bool Editor::startTransaction() {
 	if (this->transactionRefCount == 0) {
 		this->oldBuffer = this->buffer;
@@ -126,7 +135,6 @@ IVec2 Editor::getCursorStart(size_t idx) {
 IVec2 Editor::getGhostStart(size_t idx) {
 	return this->cursors[idx].start.getGhotsPos(this->buffer);
 }
-
 
 void Editor::syncCusrorEnd(size_t idx) {
 	this->cursors[idx].end.syncCursor(this->buffer);
@@ -292,6 +300,9 @@ std::string Editor::getSelectionString(size_t idx) const {
 	}
 }
 
+/*===========================
+* EDITING SYSTEM
+===========================*/
 void Editor::emptySelection(size_t idx) {
 	this->startTransaction();
 
@@ -313,7 +324,8 @@ void Editor::emptySelection(size_t idx) {
 }
 
 void Editor::insertLine(size_t idx, const std::string& line) {
-	// TODO not sure if this should be a transaction or not
+	this->startTransaction();
+
 	this->buffer.insert(this->buffer.begin() + idx, line);
 
 	for (Cursor& curs : this->cursors) {
@@ -324,6 +336,8 @@ void Editor::insertLine(size_t idx, const std::string& line) {
 			curs.end.y++;
 		}
 	}
+
+	this->endTransaction();
 }
 
 void Editor::insertBefore(const char c, size_t idx) {
@@ -775,7 +789,6 @@ int Editor::getIndentOf(size_t lineNo) {
 static std::unordered_set<char> indentOpeners = { '(','[','{' };
 static std::unordered_set<char> indentClosers = { ')',']','}' };
 
-// TODO this might differ from exact behaviour of vscode, but is good enough for now
 bool Editor::shouldAddIndent(size_t lineNo, size_t curPosX) {
 	for (int i = (int)(curPosX - 1); i >= 0; i--) {
 		if (indentOpeners.find(this->buffer[lineNo][i]) != indentOpeners.end()) {
@@ -792,6 +805,9 @@ bool Editor::shouldDropIntoNewLine(size_t lineNo, size_t curPosX) {
 	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
+/*===========================
+* SYNTAX HIGHLIGHTING
+===========================*/
 void Editor::loadGrammar(const Grammar& grammar) {
 	this->grammar = grammar;
 	this->tokenize();
@@ -799,10 +815,4 @@ void Editor::loadGrammar(const Grammar& grammar) {
 
 void Editor::tokenize() {
 	this->tokens = this->grammar.parseTextBuffer(this->buffer);
-}
-
-void Editor::debug() {
-	std::cout << "--------------------------\n";
-	for (const std::string& l : buffer) std::cout << l.size() << " : " << l << "\n";
-	std::cout << "--------------------------\n";
 }
