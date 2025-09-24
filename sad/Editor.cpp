@@ -52,7 +52,7 @@ std::string Editor::getText() const {
 }
 
 /*===========================
-* UNDO/REDO 
+* UNDO/REDO
 ===========================*/
 bool Editor::startTransaction() {
 	if (this->transactionRefCount == 0) {
@@ -312,12 +312,40 @@ void Editor::emptySelection(size_t idx) {
 	this->cursors[idx].collapseToSelectionStart(this->buffer);
 
 	if (selStart.y == selEnd.y) {
-		this->buffer[selStart.y].erase(selStart.x, selEnd.x - selStart.x);
+		size_t noDelChars = selEnd.x - selStart.x;
+		this->buffer[selStart.y].erase(selStart.x, noDelChars);
+
+		for (Cursor& curs : this->cursors) {
+			if (curs.start.y == selEnd.y && curs.start.x > selEnd.x) {
+				curs.start.x -= noDelChars;
+			}
+			if (curs.end.y == selEnd.y && curs.end.x > selEnd.x) {
+				curs.end.x -= noDelChars;
+			}
+		}
 	}
 	else {
 		this->buffer[selStart.y].erase(selStart.x, this->buffer[selStart.y].size() - selStart.x);
 		this->buffer[selStart.y] += this->buffer[selEnd.y].substr(selEnd.x);
 		this->buffer.erase(this->buffer.begin() + selStart.y + 1, this->buffer.begin() + selEnd.y + 1);
+
+		for (Cursor& curs : this->cursors) {
+			if (curs.start.y == selEnd.y && curs.start.x > selEnd.x) {
+				curs.start.x += (selStart.x - selEnd.x);
+			}
+			if (curs.end.y == selEnd.y && curs.end.x > selEnd.x) {
+				curs.end.x += (selStart.x - selEnd.x);
+			}
+		}
+
+		for (Cursor& curs : this->cursors) {
+			if (curs.start.y >= selEnd.y) {
+				curs.start.y -= (selEnd.y - selStart.y);
+			}
+			if (curs.end.y >= selEnd.y) {
+				curs.end.y -= (selEnd.y - selStart.y);
+			}
+		}
 	}
 
 	this->endTransaction();
