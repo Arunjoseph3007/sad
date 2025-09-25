@@ -59,7 +59,7 @@ public:
 	void syncCusrorEnd(size_t idx);
 	void syncCusrorStart(size_t idx);
 
-	void collapseOverlappingCursosr() { hack("Empty implmentation for collapseOverlappingCursosr"); }
+	void collapseOverlappingCursosr();
 
 	bool up();
 	bool down(size_t idx);

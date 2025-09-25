@@ -1,6 +1,8 @@
 #include <string>
 #include <assert.h>
 #include <vector>
+#include <array>
+#include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
 #include <iostream>
@@ -147,6 +149,30 @@ void Editor::syncCusrorStart(size_t idx) {
 	this->cursors[idx].start.syncCursor(this->buffer);
 }
 
+void Editor::collapseOverlappingCursosr() {
+	if (this->cursors.size() == 1) return;
+
+	// HACK BUG assuming cursors are sorted as they appear on screen
+	// TODO this approach is probably very slow, so optimize it
+	for (size_t i = 0;i < this->cursors.size() - 1;i++) {
+		IVec2 astart = this->cursors[i].selectionStart(this->buffer);
+		IVec2 aend = this->cursors[i].selectionEnd(this->buffer);
+		IVec2 bstart = this->cursors[i + 1].selectionStart(this->buffer);
+		IVec2 bend = this->cursors[i + 1].selectionEnd(this->buffer);
+
+		// astart--aend--bstart--bend (in order)
+		if (bstart > aend) continue;
+
+		std::array<IVec2, 4> all = {astart, aend, bstart, bend};
+		std::sort(all.begin(), all.end());
+
+		this->cursors.erase(this->cursors.begin() + i + 1);
+		this->cursors[i].start = all[0];
+		this->cursors[i].end = all[3];
+
+		i--;
+	}
+}
 
 bool Editor::up() {
 	for (Cursor& curs : this->cursors) {
