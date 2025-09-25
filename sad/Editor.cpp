@@ -123,6 +123,10 @@ bool Editor::redo() {
 	return true;
 }
 
+
+/*===========================
+* Curosr management
+===========================*/
 IVec2 Editor::getCursorEnd(size_t idx) {
 	return this->cursors[idx].end;
 }
@@ -142,6 +146,7 @@ void Editor::syncCusrorEnd(size_t idx) {
 void Editor::syncCusrorStart(size_t idx) {
 	this->cursors[idx].start.syncCursor(this->buffer);
 }
+
 
 bool Editor::up() {
 	for (Cursor& curs : this->cursors) {
@@ -646,14 +651,43 @@ bool Editor::del(size_t idx) {
 
 		this->buffer[gPos.y].erase(gPos.x, 1);
 
+		// Realign cursors
+		for (Cursor& scurs : this->cursors) {
+			if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
+				scurs.start.x--;
+			}
+			if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
+				scurs.end.x--;
+			}
+		}
+
 		this->endTransaction();
 		return true;
 	}
 	else if (gPos.y < this->buffer.size() - 1) {
 		this->startTransaction();
 
+		size_t lineSize = this->buffer[cursor.end.y].size();
+		for (Cursor& scurs : this->cursors) {
+			if (scurs.start.y == cursor.end.y + 1) {
+				scurs.start.x += lineSize;
+			}
+			if (scurs.end.y == cursor.end.y + 1) {
+				scurs.end.x += lineSize;
+			}
+		}
+
 		this->buffer[cursor.end.y] += this->buffer[cursor.end.y + 1];
 		this->buffer.erase(this->buffer.begin() + cursor.end.y + 1);
+
+		for (Cursor& scurs : this->cursors) {
+			if (scurs.start.y > cursor.end.y) {
+				scurs.start.y--;
+			}
+			if (scurs.end.y > cursor.end.y) {
+				scurs.end.y--;
+			}
+		}
 
 		this->endTransaction();
 		return true;
