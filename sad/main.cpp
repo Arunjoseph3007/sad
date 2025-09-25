@@ -202,6 +202,36 @@ static bool resetCursors(GLFWwindow* window, Editor& e) {
 
 	return true;
 }
+static bool selectNextInstance(GLFWwindow* window, Editor& e) {
+	size_t cursorIdx = e.cursors.size() - 1;
+	Cursor& lastCursor = e.cursors[cursorIdx];
+
+	if (!lastCursor.isSelection()) return true;
+
+	std::string search_query = e.getSelectionString(cursorIdx);
+
+	IVec2 gPos = lastCursor.selectionEnd(e.buffer);
+	size_t searchStartPos = gPos.y;
+	size_t line = searchStartPos;
+	size_t offset = gPos.x;
+	do {
+		size_t found = e.buffer[line].find(search_query, offset);
+		if (found != std::string::npos) {
+			Cursor fcurs;
+			fcurs.start.y = line;
+			fcurs.end.y = line;
+			fcurs.start.x = found;
+			fcurs.end.x = found + search_query.size();
+			e.cursors.push_back(fcurs);
+			break;
+		}
+
+		offset = 0;
+		line++;
+	} while (line < e.buffer.size());
+
+	return true;
+}
 static bool findWord(Editor& e, CommandArgs args) {
 	std::string search_query = args[0];
 
@@ -462,6 +492,7 @@ export default class NewClass {
 		KeyBinding(ImGuiKey_Backspace, Ctrl, backspaceWord),
 		KeyBinding(ImGuiKey_Delete, Ctrl, delWord),
 		KeyBinding(ImGuiKey_Escape, 0, resetCursors),// maybe this doesnt belong here, move it down
+		KeyBinding(ImGuiKey_D, Ctrl, selectNextInstance),
 	};
 
 	// Main loop
