@@ -635,6 +635,8 @@ bool Editor::backspace() {
 		this->backspace(i);
 	}
 
+	this->collapseOverlappingCursosr();
+
 	this->endTransaction();
 
 	return true;
@@ -726,6 +728,8 @@ bool Editor::del() {
 	for (size_t i = 0;i < this->cursors.size();i++) {
 		this->del(i);
 	}
+
+	this->collapseOverlappingCursosr();
 
 	this->endTransaction();
 
