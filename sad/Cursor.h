@@ -13,6 +13,11 @@ public:
 	IVec2(size_t x, size_t y);
 
 	bool operator==(const IVec2& that) const;
+	bool operator>(const IVec2& that) const;
+	bool operator<(const IVec2& that) const;
+	bool operator>=(const IVec2& that) const;
+	bool operator<=(const IVec2& that) const;
+
 
 	void syncCursor(const TextBuffer& buffer);
 	IVec2 getGhotsPos(const TextBuffer& buffer) const;

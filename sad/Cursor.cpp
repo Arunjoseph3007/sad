@@ -24,6 +24,26 @@ bool IVec2::operator==(const IVec2& that) const {
 	return this->x == that.x && this->y == that.y;
 }
 
+bool IVec2::operator>(const IVec2& that) const {
+	if (this->y > that.y) return true;
+	if (this->y < that.y) return false;
+
+	return this->x > that.x;
+}
+bool IVec2::operator<(const IVec2& that) const {
+	if (this->y < that.y) return true;
+	if (this->y > that.y) return false;
+
+	return this->x < that.x;
+}
+bool IVec2::operator>=(const IVec2& that) const {
+	return *this > that || *this == that;
+}
+bool IVec2::operator<=(const IVec2& that) const {
+	return *this < that || *this == that;
+}
+
+
 IVec2 IVec2::getGhotsPos(const TextBuffer& buffer)  const {
 	size_t y = std::min(buffer.size() - 1, this->y);
 	size_t x = std::min(buffer[y].size(), this->x);
