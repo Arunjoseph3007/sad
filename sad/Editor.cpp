@@ -879,6 +879,7 @@ bool Editor::end() {
 		this->end(i);
 	}
 
+	this->collapseOverlappingCursosr();
 	return true;
 }
 

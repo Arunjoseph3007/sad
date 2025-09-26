@@ -14,13 +14,10 @@ We are at a very basic stage so lower you expectations
 - Cursor position aware Undo/Redo
 - syntax highlighting
 - Basic command center
-- Hacky Multi cursor
+- Multi cursor editing
 - Find/replace
 
 ## TODO
-- Multi cursor bugs
-  - when adding/removing lines sync cursors below
-  - when multiple cursors in same line sync them
 - Undo/Redo system enhancements
   - We are using line diff, maybe more specific diff?
   - A better way of start/end transactions, dont want to write it everywhere
@@ -38,6 +35,7 @@ We are at a very basic stage so lower you expectations
 - auto completions
 - LSP integration
 - modding using lua
+- respect capslock/numlock
 
 ## Reference
 - Syntax highlighting - we ultimately cooked our own simple (less powerful) system

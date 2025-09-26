@@ -623,6 +623,14 @@ export default class NewClass {
 				bool shiftDown = ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift);
 				bool ctrlDown = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
 
+				/*
+				* VERY IMPORTANT WARNING
+				* we do not respect capslock of num lock
+				* If you want capital letters use shift
+				* If you want numbers use keys at top
+				* 
+				* SORRYYYYY!!
+				*/
 				if (handled) {}
 				else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
 					// TODO rework these using keybindings, only single keys should be here
@@ -669,11 +677,13 @@ export default class NewClass {
 					std::cout << "Enter\n";
 					editor.enterAndIndent();
 				}
-				else if (ImGui::IsKeyPressed(ImGuiKey_Home)) {
+				// home
+				else if (ImGui::IsKeyPressed(ImGuiKey_Keypad7)) {
 					std::cout << "Home\n";
 					editor.home();
 				}
-				else if (ImGui::IsKeyPressed(ImGuiKey_End)) {
+				// end
+				else if (ImGui::IsKeyPressed(ImGuiKey_Keypad1)) {
 					std::cout << "End\n";
 					editor.end();
 				}
@@ -723,6 +733,7 @@ export default class NewClass {
 							}
 						}
 					}
+
 					// characters
 					if (!handled) {
 						for (int i = ImGuiKey::ImGuiKey_Apostrophe;i <= ImGuiKey::ImGuiKey_GraveAccent && !handled;i++) {
