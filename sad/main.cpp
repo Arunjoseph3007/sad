@@ -439,6 +439,8 @@ int main(int, char**) {
 	commandCenter.addCommand("down", CMD_DECL{ return e.down(); });
 	commandCenter.addCommand("left", CMD_DECL{ return e.left(); });
 	commandCenter.addCommand("right", CMD_DECL{ return e.right(); });
+	commandCenter.addCommand("home", CMD_DECL{ return e.home(); });
+	commandCenter.addCommand("end", CMD_DECL{ return e.end(); });
 	commandCenter.addCommand("insert", CMD_DECL{ e.insertBefore(args[0]); return true; }, 1);
 	commandCenter.addCommand("find", findWord, 1);
 	commandCenter.addCommand("replace", replaceWord, 2);

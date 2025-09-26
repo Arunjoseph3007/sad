@@ -163,7 +163,7 @@ void Editor::collapseOverlappingCursosr() {
 		// astart--aend--bstart--bend (in order)
 		if (bstart > aend) continue;
 
-		std::array<IVec2, 4> all = {astart, aend, bstart, bend};
+		std::array<IVec2, 4> all = { astart, aend, bstart, bend };
 		std::sort(all.begin(), all.end());
 
 		this->cursors.erase(this->cursors.begin() + i + 1);
@@ -187,7 +187,7 @@ bool Editor::up() {
 
 	this->collapseOverlappingCursosr();
 
-	return true; // TODO
+	return true;
 }
 
 bool Editor::down(size_t idx) {
@@ -208,7 +208,7 @@ bool Editor::down() {
 
 	this->collapseOverlappingCursosr();
 
-	return true; // TODO
+	return true;
 }
 
 bool Editor::left(size_t idx) {
@@ -228,7 +228,7 @@ bool Editor::left() {
 
 	this->collapseOverlappingCursosr();
 
-	return true; // TODO
+	return true;
 }
 
 bool Editor::right(size_t idx) {
@@ -248,7 +248,7 @@ bool Editor::right() {
 
 	this->collapseOverlappingCursosr();
 
-	return true; // TODO
+	return true;
 }
 
 void Editor::leftWord() {
@@ -430,8 +430,6 @@ void Editor::insertBefore(const char c, size_t idx) {
 }
 void Editor::insertBefore(const char c) {
 	this->startTransaction();
-
-	// TODO handle multiple cursors in same line
 
 	for (size_t i = 0;i < this->cursors.size();i++) {
 		this->insertBefore(c, i);
@@ -845,23 +843,35 @@ void Editor::enterAndIndent() {
 	this->endTransaction();
 }
 
+bool Editor::home(size_t idx) {
+	Cursor& cursor = this->cursors[idx];
+	IVec2 selStart = cursor.selectionStart(this->buffer);
+
+	cursor.end.x = 0;
+	cursor.end.y = selStart.y;
+	cursor.start.x = 0;
+	cursor.start.y = selStart.y;
+
+	return true;
+}
 bool Editor::home() {
-	TODO();
-	/*if (this->cursor.end.x == 0) {
-		return false;
+	for (size_t i = 0;i < this->cursors.size();i++) {
+		this->home(i);
 	}
-	this->cursor.end.x = 0;
-	this->cursor.start.x = 0;*/
+
+	this->collapseOverlappingCursosr();
 	return true;
 }
 
 bool Editor::end(size_t idx) {
 	Cursor& cursor = this->cursors[idx];
-	if (cursor.end.x == this->buffer[cursor.end.y].size()) {
-		return false;
-	}
-	cursor.end.x = this->buffer[cursor.end.y].size();
-	cursor.start.x = this->buffer[cursor.end.y].size();
+	IVec2 selEnd = cursor.selectionEnd(this->buffer);
+	size_t lineLen = this->buffer[selEnd.y].size();
+
+	cursor.end.x = lineLen;
+	cursor.end.y = selEnd.y;
+	cursor.start.x = lineLen;
+	cursor.start.y = selEnd.y;
 	return true;
 }
 bool Editor::end() {

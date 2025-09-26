@@ -77,6 +77,7 @@ public:
 	void selectLeft();
 	void selectRight();
 
+	bool home(size_t idx);
 	bool home();
 	bool end(size_t idx);
 	bool end();
