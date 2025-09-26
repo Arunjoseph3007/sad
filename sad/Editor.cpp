@@ -322,7 +322,7 @@ std::string Editor::getSelectionString(size_t idx) const {
 		std::string result;
 		result += this->buffer[selStart.y].substr(selStart.x);
 		result += '\n';
-		for (size_t i = selStart.y + 1;i < selEnd.y - 1;i++) {
+		for (size_t i = selStart.y + 1;i < selEnd.y;i++) {
 			result += this->buffer[i];
 			result += '\n';
 		}
