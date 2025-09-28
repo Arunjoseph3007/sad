@@ -9,6 +9,7 @@
 #include "Grammar.h"
 #include "Timer.h"
 #include "CommandCenter.h"
+#include "Clipboard.h"
 
 #include <stdio.h>
 #include <regex>
@@ -25,6 +26,7 @@ static void glfw_error_callback(int error, const char* description) {
 
 typedef std::unordered_map<std::string, ImColor> SyntaxHighlightTheme;
 
+// Global State
 SyntaxHighlightTheme SyntaxTheme = {
 	{ "control",        ImColor(94, 129, 172) },   // Nord Blue (#5E81AC)
 	{ "declaration",    ImColor(191, 97, 106) },   // Nord Red (#BF616A)
@@ -37,6 +39,7 @@ SyntaxHighlightTheme SyntaxTheme = {
 	{ "variable",       ImColor(143, 188, 187) },  // Nord Cyan (#8FBCBB)
 	{ "punctuation",    ImColor(236, 239, 244) },  // Nord Snow 2 (#ECEFF4)
 };
+ClipboardManager clipboardManager;
 
 static ImColor getTokenColor(const std::string& matchedClass, SyntaxHighlightTheme& theme) {
 	auto it = theme.find(matchedClass);
@@ -47,28 +50,46 @@ static ImColor getTokenColor(const std::string& matchedClass, SyntaxHighlightThe
 
 // Keybindings
 static bool pasteTextFromClipBoard(GLFWwindow* window, Editor& e) {
-	e.startTransaction();
-	// something funny with pasting at end of line
-	for (size_t i = 0; i < e.cursors.size(); i++) {
-		if (e.cursors[i].isSelection()) {
-			e.emptySelection(i);
+	const char* cData = glfwGetClipboardString(window);
+	std::string cStr(cData);
+
+	auto clipRes = clipboardManager.onPaste(cStr);
+	if (clipRes.has_value()) {
+		ClipboardManageState clipState = clipRes.value();
+		// MultiLine text smart copy
+		if (clipState.multiCursorText.size() == e.cursors.size()) {
+			e.startTransaction();
+
+			for (size_t i = 0;i < e.cursors.size();i++) {
+				e.insertBefore(clipState.multiCursorText[i], i);
+			}
+
+			e.endTransaction();
+			return true;
 		}
 	}
-	const char* cData = glfwGetClipboardString(window);
-	e.insertBefore(std::string(cData));
+
+	e.startTransaction();
+	e.insertBefore(cStr);
 	e.endTransaction();
 	return true;
 }
 static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
-	hack("considering only 0th cursor in copyTextToClipBoard");
+	TextBuffer copyBuffer;
+	std::string copyText;
 
-	if (e.cursors[0].isSelection()) {
-		glfwSetClipboardString(window, e.getSelectionString(0).c_str());
+	for (size_t i = 0;i < e.cursors.size();i++) {
+		std::string ithTxt = e.cursors[i].isSelection() ? e.getSelectionString(i) : e.buffer[e.getCursorStart(i).y];
+
+		if (i > 0)copyText += "\n";
+		copyBuffer.push_back(ithTxt);
+		copyText += ithTxt;
 	}
-	else {
-		// TODO try to better copy vscode style copying
-		glfwSetClipboardString(window, e.buffer[e.getCursorStart(0).y].c_str());
-	}
+
+	ClipboardManageState clipState(copyBuffer);
+	clipboardManager.onCopy(copyText, clipState);
+
+	glfwSetClipboardString(window, copyText.c_str());
 	return true;
 }
 static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
@@ -556,7 +577,7 @@ export default class NewClass {
 				}
 				else {
 					auto gp = cursor.end.getGhotsPos(editor.buffer);
-					ImGui::Text("Cursor (%d, %d)", gp.y, gp.x);
+					ImGui::Text("Cursor (%d, %d)", gp.y + 1, gp.x);
 				}
 			}
 

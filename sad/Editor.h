@@ -83,7 +83,6 @@ public:
 	bool end();
 
 	std::string getSelectionString(size_t idx) const;
-	void emptySelection(size_t idx);
 
 	/*
 		Editing system
@@ -102,9 +101,12 @@ public:
 private:
 	void insertLine(size_t idx, const std::string& line);
 public:
+	void emptySelection(size_t idx);
+
 	void insertBefore(const char c, size_t idx);
 	void insertBefore(const char c);
 	void insertBefore(const TextBuffer& segments, size_t idx);
+	void insertBefore(const std::string& text, size_t idx);
 	void insertBefore(const std::string& text);
 
 	void insertAfter(const char c, size_t idx);
@@ -114,6 +116,7 @@ public:
 	bool backspace(size_t idx);
 	bool backspace();
 	bool backspaceWord();
+
 	bool del(size_t idx);
 	bool del();
 	bool delWord();

@@ -407,6 +407,7 @@ void Editor::insertBefore(const char c, size_t idx) {
 		this->emptySelection(idx);
 	}
 	this->syncCusrorEnd(idx);
+	this->syncCusrorStart(idx);
 
 	IVec2 gPos = this->getGhostEnd(idx);
 
@@ -438,6 +439,12 @@ void Editor::insertBefore(const char c) {
 	this->endTransaction();
 }
 
+void Editor::insertBefore(const std::string& text, size_t idx) {
+	TextBuffer segments = splitString(text);
+	if (segments.size() == 0) return;
+
+	this->insertBefore(segments, idx);
+}
 void Editor::insertBefore(const TextBuffer& segments, size_t idx) {
 	this->startTransaction();
 
@@ -463,7 +470,7 @@ void Editor::insertBefore(const TextBuffer& segments, size_t idx) {
 	// insert last line
 	if (segments.size() > 1) {
 		for (int i = 0;i < segments[segments.size() - 1].size();i++) {
-			this->insertBefore(segments[segments.size() - 1][i], cursor.end.y);
+			this->insertBefore(segments[segments.size() - 1][i], idx);
 		}
 	}
 
@@ -572,6 +579,7 @@ bool Editor::backspace(size_t idx) {
 	}
 
 	IVec2 gPos = this->getGhostEnd(idx);
+	this->syncCusrorStart(idx);
 	this->syncCusrorEnd(idx);
 
 	if (gPos.x > 0) {
@@ -670,6 +678,7 @@ bool Editor::del(size_t idx) {
 		return true;
 	}
 	IVec2 gPos = this->getGhostEnd(idx);
+	this->syncCusrorStart(idx);
 	this->syncCusrorEnd(idx);
 
 	if (gPos.x < this->buffer[gPos.y].size()) {
@@ -761,6 +770,8 @@ void Editor::enter(size_t idx) {
 	if (cursor.isSelection()) {
 		this->emptySelection(idx);
 	}
+	this->syncCusrorStart(idx);
+	this->syncCusrorEnd(idx);
 	IVec2 gPos = this->getGhostEnd(idx);
 
 	std::string before = this->buffer[gPos.y].substr(0, gPos.x);
