@@ -93,21 +93,44 @@ static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
 	return true;
 }
 static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
-	hack("considering only 0th cursor in cutTextToClipBoard");
-
 	e.startTransaction();
+	todo("multiple cursors on sibgle line");
 
-	if (e.cursors[0].isSelection()) {
-		glfwSetClipboardString(window, e.getSelectionString(0).c_str());
-		e.emptySelection(0);
+	TextBuffer copyBuffer;
+	std::string copyText;
+	for (size_t i = 0;i < e.cursors.size();i++) {
+		std::string ithTxt;
+		if (e.cursors[i].isSelection()) {
+			ithTxt = e.getSelectionString(i);
+			e.emptySelection(i);
+		}
+		else {
+			size_t lineNo = e.getCursorStart(i).y;
+			ithTxt = e.buffer[lineNo];
+
+			for (Cursor& curs : e.cursors) {
+				if (curs.start.y > lineNo) {
+					curs.start.y--;
+				}
+				if (curs.end.y > lineNo) {
+					curs.end.y--;
+				}
+			}
+			e.buffer.erase(e.buffer.begin() + lineNo);
+		}
+
+		if (i > 0)copyText += "\n";
+		copyBuffer.push_back(ithTxt);
+		copyText += ithTxt;
 	}
-	else {
-		// TODO try to better copy vscode style cutting
-		size_t lineNo = e.getCursorStart(0).y;
-		glfwSetClipboardString(window, e.buffer[lineNo].c_str());
-		e.buffer.erase(e.buffer.begin() + lineNo);
-	}
+
+	ClipboardManageState clipState(copyBuffer);
+	clipboardManager.onCopy(copyText, clipState);
+	glfwSetClipboardString(window, copyText.c_str());
+
+	e.collapseOverlappingCursosr();
 	e.endTransaction();
+
 	return true;
 }
 static bool selectAll(GLFWwindow* window, Editor& e) {
@@ -126,6 +149,29 @@ static bool moveLeftWord(GLFWwindow* window, Editor& e) {
 }
 static bool moveRightWord(GLFWwindow* window, Editor& e) {
 	e.rightWord();
+	return true;
+}
+static bool selectLeftWord(GLFWwindow* window, Editor& e) {
+	for (size_t ci = 0;ci < e.cursors.size();ci++) {
+		Cursor& curs = e.cursors[ci];
+		if (!curs.end.left(e.buffer)) continue;
+
+		while (getCharType(curs.end.getPrev(e.buffer)) == CharType::Alphabet) {
+			if (!curs.end.left(e.buffer)) break;
+		}
+	}
+	return true;
+}
+static bool selectRightWord(GLFWwindow* window, Editor& e) {
+	for (size_t ci = 0;ci < e.cursors.size();ci++) {
+		Cursor& curs = e.cursors[ci];
+		if (!curs.end.right(e.buffer)) continue;
+
+		while (getCharType(curs.end.getNext(e.buffer)) == CharType::Alphabet) {
+			if (!curs.end.right(e.buffer)) break;
+		}
+	}
+
 	return true;
 }
 static bool moveLineUp(GLFWwindow* window, Editor& e) {
@@ -503,6 +549,8 @@ export default class NewClass {
 		KeyBinding(ImGuiKey_X, Ctrl, cutTextToClipBoard),
 		KeyBinding(ImGuiKey_LeftArrow, Ctrl, moveLeftWord),
 		KeyBinding(ImGuiKey_RightArrow, Ctrl, moveRightWord),
+		KeyBinding(ImGuiKey_LeftArrow, Ctrl + Shift, selectLeftWord),
+		KeyBinding(ImGuiKey_RightArrow, Ctrl + Shift, selectRightWord),
 		KeyBinding(ImGuiKey_UpArrow, Alt, moveLineUp),
 		KeyBinding(ImGuiKey_DownArrow, Alt, moveLineDown),
 		KeyBinding(ImGuiKey_UpArrow, Alt + Shift, copyLineUp),
@@ -649,7 +697,7 @@ export default class NewClass {
 				* we do not respect capslock of num lock
 				* If you want capital letters use shift
 				* If you want numbers use keys at top
-				* 
+				*
 				* SORRYYYYY!!
 				*/
 				if (handled) {}
