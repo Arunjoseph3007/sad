@@ -11,19 +11,6 @@
 #include "imgui.h"
 #include "Timer.h"
 
-enum CharType {
-	Alphabet,
-	Number,
-	SpecialChar
-};
-
-static CharType getCharType(const char& c) {
-	if (c >= 'a' && c <= 'z') return CharType::Alphabet;
-	if (c >= 'A' && c <= 'Z') return CharType::Alphabet;
-	if (c >= '0' && c <= '9') return CharType::Number;
-	return CharType::SpecialChar;
-}
-
 static void debugCur(Cursor c) {
 	printf("x: %zu, y: %zu, xp: %zu, yp: %zu\n", c.start.x, c.start.y, c.end.x, c.end.y);
 }

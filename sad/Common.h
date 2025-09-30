@@ -6,6 +6,14 @@ typedef std::vector<std::string> TextBuffer;
 
 TextBuffer splitString(const std::string& text, const char& delimiter = '\n');
 
+enum CharType {
+	Alphabet,
+	Number,
+	SpecialChar
+};
+
+CharType getCharType(const char& c);
+
 void todo(std::string name);
 
 void unreachable(std::string name);
