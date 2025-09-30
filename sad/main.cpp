@@ -189,6 +189,21 @@ static bool selectRightWord(GLFWwindow* window, Editor& e) {
 
 	return true;
 }
+static bool selectTillHome(GLFWwindow* window, Editor& e) {
+	for (Cursor& curs : e.cursors) {
+		curs.end.x = 0;
+	}
+
+	return true;
+}
+static bool selectTillEnd(GLFWwindow* window, Editor& e) {
+	for (Cursor& curs : e.cursors) {
+		size_t lineLen = e.buffer[curs.end.y].size();
+		curs.end.x = lineLen;
+	}
+
+	return true;
+}
 static bool moveLineUp(GLFWwindow* window, Editor& e) {
 	hack("considering only 0th cursor in moveLineUp");
 
@@ -566,6 +581,8 @@ export default class NewClass {
 		KeyBinding(ImGuiKey_RightArrow, Ctrl, moveRightWord),
 		KeyBinding(ImGuiKey_LeftArrow, Ctrl + Shift, selectLeftWord),
 		KeyBinding(ImGuiKey_RightArrow, Ctrl + Shift, selectRightWord),
+		KeyBinding(ImGuiKey_Keypad7, Shift, selectTillHome),
+		KeyBinding(ImGuiKey_Keypad1, Shift, selectTillEnd),
 		KeyBinding(ImGuiKey_UpArrow, Alt, moveLineUp),
 		KeyBinding(ImGuiKey_DownArrow, Alt, moveLineDown),
 		KeyBinding(ImGuiKey_UpArrow, Alt + Shift, copyLineUp),
