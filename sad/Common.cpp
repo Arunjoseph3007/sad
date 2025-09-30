@@ -1,4 +1,5 @@
 #include "Common.h"
+#include <iostream>
 
 TextBuffer splitString(const std::string& text, const char& delimiter) {
 	TextBuffer result;
@@ -14,4 +15,18 @@ TextBuffer splitString(const std::string& text, const char& delimiter) {
 	result.push_back(segment);
 
 	return result;
+}
+
+void todo(std::string name) {
+	std::cout << "[TODO]: Unimplmented method " << name << " called\n";
+	exit(1);
+}
+
+void unreachable(std::string name) {
+	std::cout << "[UNREACHABLE]: Reached unreachable code " << name << "\n";
+	exit(1);
+}
+
+void hack(std::string name) {
+	std::cout << "[HACK]: this is a temporary hack for problem (" << name << ")\n";
 }

@@ -5,7 +5,7 @@
 Edit Edit::diffBuffers(const TextBuffer& a, const TextBuffer& b) {
 	if (a == b) return Edit(0, {}, {});
 
-	size_t start = 0;
+	int start = 0;
 	while (start < a.size() && start < b.size() && a[start] == b[start]) {
 		start++;
 	}

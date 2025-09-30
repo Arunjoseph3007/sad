@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& os, const TextBuffer& tb) {
 
 IVec2::IVec2() { x = 0;y = 0; }
 
-IVec2::IVec2(int x, int y) {
+IVec2::IVec2(size_t x, size_t y) {
 	this->x = x;
 	this->y = y;
 }
@@ -24,24 +24,44 @@ bool IVec2::operator==(const IVec2& that) const {
 	return this->x == that.x && this->y == that.y;
 }
 
-IVec2 IVec2::getGhotsPos(TextBuffer buffer)  const {
-	int y = std::min((int)buffer.size() - 1, this->y);
-	int x = std::min((int)buffer[y].size(), this->x);
+bool IVec2::operator>(const IVec2& that) const {
+	if (this->y > that.y) return true;
+	if (this->y < that.y) return false;
+
+	return this->x > that.x;
+}
+bool IVec2::operator<(const IVec2& that) const {
+	if (this->y < that.y) return true;
+	if (this->y > that.y) return false;
+
+	return this->x < that.x;
+}
+bool IVec2::operator>=(const IVec2& that) const {
+	return *this > that || *this == that;
+}
+bool IVec2::operator<=(const IVec2& that) const {
+	return *this < that || *this == that;
+}
+
+
+IVec2 IVec2::getGhotsPos(const TextBuffer& buffer)  const {
+	size_t y = std::min(buffer.size() - 1, this->y);
+	size_t x = std::min(buffer[y].size(), this->x);
 	return { x, y };
 }
 
-void IVec2::syncCursor(TextBuffer buffer) {
-	this->y = std::min((int)buffer.size() - 1, this->y);
-	this->x = std::min((int)buffer[y].size(), this->x);
+void IVec2::syncCursor(const TextBuffer& buffer) {
+	this->y = std::min(buffer.size() - 1, this->y);
+	this->x = std::min(buffer[y].size(), this->x);
 }
 
-char IVec2::getPrev(TextBuffer buffer) const {
+char IVec2::getPrev(const TextBuffer& buffer) const {
 	if (this->x == 0 && this->y == 0) return 0;
 	if (this->x == 0) return '\n';
 
 	return buffer[y][x - 1];
 }
-char IVec2::getNext(TextBuffer buffer) const {
+char IVec2::getNext(const TextBuffer& buffer) const {
 	if (this->y == buffer.size() - 1 && this->x == buffer[this->y].size()) return 0;
 	if (this->x == buffer[this->y].size()) return '\n';
 
@@ -49,7 +69,7 @@ char IVec2::getNext(TextBuffer buffer) const {
 }
 
 
-bool IVec2::up(TextBuffer buffer) {
+bool IVec2::up(const TextBuffer& buffer) {
 	if (this->y > 0) {
 		this->y--;
 		return true;
@@ -61,7 +81,7 @@ bool IVec2::up(TextBuffer buffer) {
 	return true;
 }
 
-bool IVec2::down(TextBuffer buffer) {
+bool IVec2::down(const TextBuffer& buffer) {
 	if (this->y < buffer.size() - 1) {
 		this->y++;
 		return true;
@@ -73,7 +93,7 @@ bool IVec2::down(TextBuffer buffer) {
 	return false;
 }
 
-bool IVec2::left(TextBuffer buffer) {
+bool IVec2::left(const TextBuffer& buffer) {
 	this->syncCursor(buffer);
 
 	if (this->x > 0) {
@@ -88,7 +108,7 @@ bool IVec2::left(TextBuffer buffer) {
 	return false;
 }
 
-bool IVec2::right(TextBuffer buffer) {
+bool IVec2::right(const TextBuffer& buffer) {
 	this->syncCursor(buffer);
 
 	if (this->x < buffer[this->y].size()) {
@@ -103,7 +123,7 @@ bool IVec2::right(TextBuffer buffer) {
 	return false;
 }
 
-Cursor::Cursor(int cx, int cy) {
+Cursor::Cursor(size_t cx, size_t cy) {
 	this->start = IVec2(cx, cy);
 	this->end = IVec2(cx, cy);
 }
@@ -117,7 +137,7 @@ bool Cursor::isSelection() const {
 	return !(start == end);
 }
 
-IVec2 Cursor::selectionStart(TextBuffer buffer) const {
+IVec2 Cursor::selectionStart(const TextBuffer& buffer) const {
 	IVec2 selStart = this->start.getGhotsPos(buffer);
 	IVec2 selEnd = this->end.getGhotsPos(buffer);
 
@@ -128,7 +148,7 @@ IVec2 Cursor::selectionStart(TextBuffer buffer) const {
 	return selStart.y < selEnd.y ? selStart : selEnd;
 }
 
-IVec2 Cursor::selectionEnd(TextBuffer buffer) const {
+IVec2 Cursor::selectionEnd(const TextBuffer& buffer) const {
 	IVec2 selStart = this->start.getGhotsPos(buffer);
 	IVec2 selEnd = this->end.getGhotsPos(buffer);
 
@@ -139,14 +159,27 @@ IVec2 Cursor::selectionEnd(TextBuffer buffer) const {
 	return selStart.y > selEnd.y ? selStart : selEnd;
 }
 
-void Cursor::collapseToSelectionStart(TextBuffer buffer) {
+bool Cursor::up(const TextBuffer& buffer) {
+	return this->start.up(buffer) && this->end.up(buffer);
+}
+bool Cursor::down(const TextBuffer& buffer) {
+	return this->start.down(buffer) && this->end.down(buffer);
+}
+bool Cursor::left(const TextBuffer& buffer) {
+	return this->start.left(buffer) && this->end.left(buffer);
+}
+bool Cursor::right(const TextBuffer& buffer) {
+	return this->start.right(buffer) && this->end.right(buffer);
+}
+
+void Cursor::collapseToSelectionStart(const TextBuffer& buffer) {
 	IVec2 selStart = this->selectionStart(buffer);
 
 	this->start = selStart;
 	this->end = selStart;
 }
 
-void Cursor::collapseToSelectionEnd(TextBuffer buffer) {
+void Cursor::collapseToSelectionEnd(const TextBuffer& buffer) {
 	IVec2 selEnd = this->selectionEnd(buffer);
 
 	this->start = selEnd;

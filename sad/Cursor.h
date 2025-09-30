@@ -7,23 +7,28 @@ std::ostream& operator<<(std::ostream& os, const TextBuffer& obj);
 
 struct IVec2 {
 public:
-	int x, y;
+	size_t x, y;
 
 	IVec2();
-	IVec2(int x, int y);
+	IVec2(size_t x, size_t y);
 
 	bool operator==(const IVec2& that) const;
+	bool operator>(const IVec2& that) const;
+	bool operator<(const IVec2& that) const;
+	bool operator>=(const IVec2& that) const;
+	bool operator<=(const IVec2& that) const;
 
-	void syncCursor(TextBuffer buffer);
-	IVec2 getGhotsPos(TextBuffer buffer) const;
 
-	char getPrev(TextBuffer buffer) const;
-	char getNext(TextBuffer buffer) const;
+	void syncCursor(const TextBuffer& buffer);
+	IVec2 getGhotsPos(const TextBuffer& buffer) const;
 
-	bool up(TextBuffer buffer);
-	bool down(TextBuffer buffer);
-	bool left(TextBuffer buffer);
-	bool right(TextBuffer buffer);
+	char getPrev(const TextBuffer& buffer) const;
+	char getNext(const TextBuffer& buffer) const;
+
+	bool up(const TextBuffer& buffer);
+	bool down(const TextBuffer& buffer);
+	bool left(const TextBuffer& buffer);
+	bool right(const TextBuffer& buffer);
 };
 
 struct Cursor {
@@ -32,12 +37,17 @@ public:
 	IVec2 end;
 
 	Cursor();
-	Cursor(int x, int y);
+	Cursor(size_t x, size_t y);
 
 	bool isSelection() const;
-	IVec2 selectionStart(TextBuffer buffer) const;
-	IVec2 selectionEnd(TextBuffer buffer) const;
+	IVec2 selectionStart(const TextBuffer& buffer) const;
+	IVec2 selectionEnd(const TextBuffer& buffer) const;
 
-	void collapseToSelectionStart(TextBuffer buffer);
-	void collapseToSelectionEnd(TextBuffer buffer);
+	bool up(const TextBuffer& buffer);
+	bool down(const TextBuffer& buffer);
+	bool left(const TextBuffer& buffer);
+	bool right(const TextBuffer& buffer);
+
+	void collapseToSelectionStart(const TextBuffer& buffer);
+	void collapseToSelectionEnd(const TextBuffer& buffer);
 };

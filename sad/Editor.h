@@ -8,10 +8,8 @@ const int MAX_UNDO_HISTORY_SIZE = 100;
 
 class Editor {
 public:
-	Cursor cursor;
-	TextBuffer buffer;
-
 	Editor();
+
 	void debug();
 	std::string getText() const;
 
@@ -35,7 +33,7 @@ public:
 	int transactionRefCount = 0;
 	History undoHistory, redoHistory;
 	TextBuffer oldBuffer;
-	Cursor oldCursor;
+	std::vector<Cursor> oldCursors;
 public:
 	bool startTransaction();
 	bool endTransaction();
@@ -54,16 +52,21 @@ public:
 		When different they behave as Selections
 	*/
 public:
-	IVec2 getCursorEnd();
-	IVec2 getGhostEnd();
-	IVec2 getCursorStart();
-	IVec2 getGhostStart();
-	void syncCusrorEnd();
-	void syncCusrorStart();
+	IVec2 getCursorEnd(size_t idx);
+	IVec2 getGhostEnd(size_t idx);
+	IVec2 getCursorStart(size_t idx);
+	IVec2 getGhostStart(size_t idx);
+	void syncCusrorEnd(size_t idx);
+	void syncCusrorStart(size_t idx);
+
+	void collapseOverlappingCursosr();
 
 	bool up();
+	bool down(size_t idx);
 	bool down();
+	bool left(size_t idx);
 	bool left();
+	bool right(size_t idx);
 	bool right();
 
 	void leftWord();
@@ -74,33 +77,58 @@ public:
 	void selectLeft();
 	void selectRight();
 
+	bool home(size_t idx);
 	bool home();
+	bool end(size_t idx);
 	bool end();
 
-	int getIndentOf(int lineNo);
-	bool shouldAddIndent(int lineNo, int curPosX);
-	bool shouldDropIntoNewLine(int lineNo, int curPosX);
-
-	std::string getSelectionString() const;
-	void emptySelection();
+	std::string getSelectionString(size_t idx) const;
 
 	/*
 		Editing system
+
+		How to work with multiple cursors?
+		Each function has to realign and manipulate the cursors such that it makes sense before returning.
+		This means that as long as you are using functions you wont have to worry about managing cursors.
+
+		It is only when you directly manipulate buffer or cursors that you are responsible for
+		realigning not only the current cursor but also other cursors so that it is all good.
+		When introducing keep in mind that it should manage its own cursors.
 	*/
 public:
+	std::vector<Cursor> cursors;
+	TextBuffer buffer;
+private:
+	void insertLine(size_t idx, const std::string& line);
+public:
+	void emptySelection(size_t idx);
+
+	void insertBefore(const char c, size_t idx);
 	void insertBefore(const char c);
+	void insertBefore(const TextBuffer& segments, size_t idx);
+	void insertBefore(const std::string& text, size_t idx);
 	void insertBefore(const std::string& text);
+
+	void insertAfter(const char c, size_t idx);
 	void insertAfter(const char c);
-	void insertAfter(const std::string& text);
 	void charInsertBefore(int ch, bool shift);
 
+	bool backspace(size_t idx);
 	bool backspace();
 	bool backspaceWord();
+
+	bool del(size_t idx);
 	bool del();
 	bool delWord();
 
+	void enter(size_t idx);
 	void enter();
+	void enterAndIndent(size_t idx);
 	void enterAndIndent();
+
+	int getIndentOf(size_t lineNo);
+	bool shouldAddIndent(size_t lineNo, size_t curPosX);
+	bool shouldDropIntoNewLine(size_t lineNo, size_t curPosX);
 
 	/*
 		Syntax highlighting stuff
@@ -112,5 +140,6 @@ private:
 public:
 	std::vector<GrammarMatch> tokens;
 
-	void loadGrammar(Grammar grammar);
+	void loadGrammar(const Grammar& grammar);
+	void tokenize();
 };
