@@ -77,11 +77,21 @@ static bool pasteTextFromClipBoard(GLFWwindow* window, Editor& e) {
 static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
 	TextBuffer copyBuffer;
 	std::string copyText;
-
+	std::vector<bool> fullLineCopied(e.buffer.size(), false);
 	for (size_t i = 0;i < e.cursors.size();i++) {
-		std::string ithTxt = e.cursors[i].isSelection() ? e.getSelectionString(i) : e.buffer[e.getCursorStart(i).y];
+		std::string ithTxt;
+		if (e.cursors[i].isSelection()) {
+			ithTxt = e.getSelectionString(i);
+		}
+		else {
+			size_t lineNo = e.getCursorStart(i).y;
+			if (fullLineCopied[lineNo]) continue;
 
-		if (i > 0)copyText += "\n";
+			ithTxt = e.buffer[lineNo];
+			fullLineCopied[lineNo] = true;
+		}
+
+		if (i > 0) copyText += "\n";
 		copyBuffer.push_back(ithTxt);
 		copyText += ithTxt;
 	}
@@ -94,11 +104,12 @@ static bool copyTextToClipBoard(GLFWwindow* window, Editor& e) {
 }
 static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
 	e.startTransaction();
-	todo("multiple cursors on sibgle line");
 
-	TextBuffer copyBuffer;
-	std::string copyText;
-	for (size_t i = 0;i < e.cursors.size();i++) {
+	TextBuffer cutBuffer;
+	std::string cutText;
+	std::vector<bool> fullLineCutt(e.buffer.size(), false);
+	hack("looks really bad and har to manage [cut text]");
+	for (int i = (int)e.cursors.size() - 1; i >= 0; i--) {
 		std::string ithTxt;
 		if (e.cursors[i].isSelection()) {
 			ithTxt = e.getSelectionString(i);
@@ -106,7 +117,10 @@ static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
 		}
 		else {
 			size_t lineNo = e.getCursorStart(i).y;
+			if (fullLineCutt[lineNo]) continue;
+
 			ithTxt = e.buffer[lineNo];
+			fullLineCutt[lineNo] = true;
 
 			for (Cursor& curs : e.cursors) {
 				if (curs.start.y > lineNo) {
@@ -116,17 +130,18 @@ static bool cutTextToClipBoard(GLFWwindow* window, Editor& e) {
 					curs.end.y--;
 				}
 			}
+
 			e.buffer.erase(e.buffer.begin() + lineNo);
 		}
 
-		if (i > 0)copyText += "\n";
-		copyBuffer.push_back(ithTxt);
-		copyText += ithTxt;
+		cutBuffer.insert(cutBuffer.begin(), ithTxt);
+		if (i > 0) cutText = "\n" + cutText;
+		cutText = ithTxt + cutText;
 	}
 
-	ClipboardManageState clipState(copyBuffer);
-	clipboardManager.onCopy(copyText, clipState);
-	glfwSetClipboardString(window, copyText.c_str());
+	ClipboardManageState clipState(cutBuffer);
+	clipboardManager.onCopy(cutText, clipState);
+	glfwSetClipboardString(window, cutText.c_str());
 
 	e.collapseOverlappingCursosr();
 	e.endTransaction();
