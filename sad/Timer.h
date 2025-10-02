@@ -1,5 +1,7 @@
 #pragma once
 #include <chrono>
+#include <unordered_map>
+#include <string>
 
 class Timer {
 private:
@@ -9,6 +11,26 @@ private:
 public:
 	Timer(const char* iden);
 	~Timer();
+};
+
+struct TimerStats {
+	size_t invocations;
+	std::chrono::high_resolution_clock::duration totalTime;
+
+	// return average execution time in nanos
+	float averageExecutionTime() const;
+};
+
+// TODO convert to singleton
+class TimerManager {
+private:
+	std::unordered_map<std::string, TimerStats> timerStatsTable;
+
+public:
+	TimerManager();
+	~TimerManager();
+
+	void registerInvocation(std::string iden, std::chrono::high_resolution_clock::duration dur);
 };
 
 #ifdef _DEBUG
