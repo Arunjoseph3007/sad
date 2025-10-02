@@ -1,10 +1,14 @@
 #pragma once
 #include <string>
+#include <utility>
 #include "Cursor.h"
 #include "Edit.h"
 #include "Grammar.h"
 
 const int MAX_UNDO_HISTORY_SIZE = 100;
+
+typedef std::pair<size_t, size_t> CodeFold;
+typedef std::vector<CodeFold> CodeFolds;
 
 class Editor {
 public:
@@ -98,6 +102,7 @@ public:
 public:
 	std::vector<Cursor> cursors;
 	TextBuffer buffer;
+	CodeFolds codeFolds;
 private:
 	void insertLine(size_t idx, const std::string& line);
 public:
@@ -130,6 +135,8 @@ public:
 	bool shouldAddIndent(size_t lineNo, size_t curPosX);
 	bool shouldDropIntoNewLine(size_t lineNo, size_t curPosX);
 
+	void addFold(size_t start, size_t end);
+	void removeFold(size_t idx);
 	/*
 		Syntax highlighting stuff
 		this really should be here but we are using it just to move fast

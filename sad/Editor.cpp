@@ -906,6 +906,14 @@ bool Editor::shouldDropIntoNewLine(size_t lineNo, size_t curPosX) {
 	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
+
+void Editor::addFold(size_t start, size_t end) {
+	this->codeFolds.push_back({ start,end });
+	std::sort(this->codeFolds.begin(), this->codeFolds.end());
+}
+void Editor::removeFold(size_t idx) {
+	this->codeFolds.erase(this->codeFolds.begin() + idx);
+}
 /*===========================
 * SYNTAX HIGHLIGHTING
 ===========================*/

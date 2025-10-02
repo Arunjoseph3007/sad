@@ -346,6 +346,7 @@ static bool saveFile(GLFWwindow* window, Editor& e) {
 	return true;
 }
 
+// Commands
 static bool findWord(Editor& e, CommandArgs args) {
 	std::string search_query = args[0];
 
@@ -411,6 +412,14 @@ static bool replaceWord(Editor& e, CommandArgs args) {
 	// and users can search for next just by enter
 	return false;
 }
+static bool addFold(Editor& e, CommandArgs args) {
+	int start = toInt(args[0]);
+	int end = toInt(args[1]);
+
+	IM_ASSERT(start >= 0 && end >= 0);
+	e.addFold((size_t)start, (size_t)end);
+	return false;
+}
 
 
 static void SetupTheme() {}
@@ -420,7 +429,7 @@ static const int lineHeight = 24;
 static const int charWidth = 10;
 
 static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style) {
-	const int lineNumberBarSize = 40;
+	const int lineNumberBarSize = 70;
 	const ImColor lineNoCol(100, 100, 100);
 	ImVec2 p = ImGui::GetCursorScreenPos();
 
@@ -436,7 +445,6 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		drawList->AddRectFilled(start, end, ImColor(255, 255, 255));
 	}
 
-	// render selection
 	auto markSelectionLine = [&](size_t y, size_t sx, size_t ex) {
 		ImVec2 lstart(lineNumberBarSize + p.x + sx * charWidth, p.y + y * lineHeight);
 		ImVec2 lend(lineNumberBarSize + p.x + ex * charWidth, lstart.y + lineHeight);
@@ -445,6 +453,7 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		drawList->AddRectFilled(lstart, lend, selCol);
 		};
 
+	// render selections
 	for (const Cursor& cursor : editor.cursors) {
 		if (cursor.isSelection()) {
 			IVec2 st = cursor.selectionStart(editor.buffer);
@@ -490,6 +499,11 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 			editor.buffer[token.line].data() + token.start,
 			editor.buffer[token.line].data() + token.end
 		);
+	}
+
+	// highlight folds
+	for (const CodeFold& codeFold : editor.codeFolds) {
+		markSelectionLine(codeFold.first, 0, 200);
 	}
 
 	ImVec2 scrollSpace(
@@ -561,6 +575,7 @@ int main(int, char**) {
 	commandCenter.addCommand("insert", CMD_DECL(e){ e.insertBefore(args[0]); return true; }, 1);
 	commandCenter.addCommand("find", findWord, 1);
 	commandCenter.addCommand("replace", replaceWord, 2);
+	commandCenter.addCommand("addFold", addFold, 2);
 
 	Grammar grammar = simpleJsGrammar();
 	editor.loadGrammar(grammar);
@@ -684,6 +699,9 @@ export default class NewClass {
 				}
 			}
 
+			for (const CodeFold& fold : editor.codeFolds) {
+				ImGui::Text("CodeFold(%zu, %zu)", fold.first, fold.second);
+			}
 
 			ImGui::End();
 		}
