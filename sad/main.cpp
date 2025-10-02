@@ -552,13 +552,13 @@ int main(int, char**) {
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	Editor editor = Editor();
 	CommandCenter commandCenter = {};
-	commandCenter.addCommand("up", CMD_DECL{ return e.up(); });
-	commandCenter.addCommand("down", CMD_DECL{ return e.down(); });
-	commandCenter.addCommand("left", CMD_DECL{ return e.left(); });
-	commandCenter.addCommand("right", CMD_DECL{ return e.right(); });
-	commandCenter.addCommand("home", CMD_DECL{ return e.home(); });
-	commandCenter.addCommand("end", CMD_DECL{ return e.end(); });
-	commandCenter.addCommand("insert", CMD_DECL{ e.insertBefore(args[0]); return true; }, 1);
+	commandCenter.addCommand("up", CMD_DECL(e){ return e.up(); });
+	commandCenter.addCommand("down", CMD_DECL(e){ return e.down(); });
+	commandCenter.addCommand("left", CMD_DECL(e){ return e.left(); });
+	commandCenter.addCommand("right", CMD_DECL(e){ return e.right(); });
+	commandCenter.addCommand("home", CMD_DECL(e){ return e.home(); });
+	commandCenter.addCommand("end", CMD_DECL(e){ return e.end(); });
+	commandCenter.addCommand("insert", CMD_DECL(e){ e.insertBefore(args[0]); return true; }, 1);
 	commandCenter.addCommand("find", findWord, 1);
 	commandCenter.addCommand("replace", replaceWord, 2);
 

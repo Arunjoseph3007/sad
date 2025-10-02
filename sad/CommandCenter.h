@@ -9,10 +9,10 @@ typedef std::vector<std::string> CommandArgs;
 typedef std::function<bool(Editor&, const CommandArgs&)> CommandFunc;
 
 // this macro can be used to simplify command decalration using lambda syntax
-// CMD_DECL{ return e.up(); }
+// CMD_DECL(e) { return e.up(); }
 // instead of
 // [](Editor& e, const CommandArgs& args)
-#define CMD_DECL [](Editor& e, const CommandArgs& args)
+#define CMD_DECL(e) [](Editor& e, const CommandArgs& args)
 
 class Command {
 public:
