@@ -33,3 +33,5 @@ public:
 
 	bool dispatch(Editor& editor, const char* commandText) const;
 };
+
+int toInt(const std::string& str);

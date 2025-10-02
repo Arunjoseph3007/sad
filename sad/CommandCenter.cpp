@@ -12,7 +12,7 @@ void CommandCenter::addCommand(const std::string& commandName, CommandFunc func,
 	this->commands.insert({ commandName, c });
 }
 
-static int toInt(const std::string& str) {
+int toInt(const std::string& str) {
 	int result = 0;
 
 	for (char ch : str) {
