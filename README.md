@@ -22,7 +22,6 @@ We are at a very basic stage so lower you expectations
   - We are using line diff, maybe more specific diff?
   - A better way of start/end transactions, dont want to write it everywhere
 - Selecting by clicking/dragging
-- Actually save the file
 - Edit multiple files simultaneously (optional)
 - Better UI styling
 - fix alignment issue due to `\r \n \t`
@@ -34,6 +33,7 @@ We are at a very basic stage so lower you expectations
 - Synatx highlighting for many lagunages
 - auto completions
 - LSP integration
+- Code folding
 - modding using lua
 - respect capslock/numlock
 

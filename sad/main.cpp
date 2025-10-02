@@ -27,6 +27,8 @@ static void glfw_error_callback(int error, const char* description) {
 typedef std::unordered_map<std::string, ImColor> SyntaxHighlightTheme;
 
 // Global State
+std::filesystem::path dirpath;
+std::filesystem::path openfile; // TODO: we might need to refactor this to a vec
 SyntaxHighlightTheme SyntaxTheme = {
 	{ "control",        ImColor(94, 129, 172) },   // Nord Blue (#5E81AC)
 	{ "declaration",    ImColor(191, 97, 106) },   // Nord Red (#BF616A)
@@ -329,6 +331,21 @@ static bool selectNextInstance(GLFWwindow* window, Editor& e) {
 
 	return true;
 }
+static bool saveFile(GLFWwindow* window, Editor& e) {
+	TIMEIT();
+
+	std::ofstream openFileStream;
+	openFileStream.open(openfile.c_str());
+
+	if (!openFileStream.is_open()) {
+		std::cout << "Couldn't open file: " << openfile << std::endl;
+		return false;
+	}
+	openFileStream << e.getText();
+	openFileStream.close();
+	return true;
+}
+
 static bool findWord(Editor& e, CommandArgs args) {
 	std::string search_query = args[0];
 
@@ -394,6 +411,7 @@ static bool replaceWord(Editor& e, CommandArgs args) {
 	// and users can search for next just by enter
 	return false;
 }
+
 
 static void SetupTheme() {}
 
@@ -483,10 +501,12 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 // Main code
 int main(int, char**) {
 	std::string path = "C:\\Users\\arun.mulakkal\\xlabs\\ramdon";
-	std::filesystem::path filepath = std::filesystem::path(path);
-	std::cout << "Filepath is: " << filepath.string() << std::endl;
+	dirpath = std::filesystem::path(path);
+	openfile = dirpath / "out.js";
+	std::cout << "Dirpath is: " << dirpath.string() << std::endl;
+	std::cout << "Full filename is: " << openfile.string() << std::endl;
 
-	FileTree ft = FileTree(filepath);
+	FileTree ft = FileTree(dirpath);
 
 	glfwSetErrorCallback(glfw_error_callback);
 	if (!glfwInit()) return 1;
@@ -596,6 +616,7 @@ export default class NewClass {
 		KeyBinding(ImGuiKey_Delete, Ctrl, delWord),
 		KeyBinding(ImGuiKey_Escape, 0, resetCursors),// maybe this doesnt belong here, move it down
 		KeyBinding(ImGuiKey_D, Ctrl, selectNextInstance),
+		KeyBinding(ImGuiKey_S, Ctrl, saveFile),
 	};
 
 	// Main loop
@@ -622,7 +643,8 @@ export default class NewClass {
 			auto [clicked, selectedPath] = ft.renderImGui();
 			if (clicked) {
 				std::string filename = selectedPath.string();
-				std::cout << "Opened: " << filename << std::endl;
+				openfile = std::filesystem::path(filename);
+				std::cout << "Opening: " << filename << std::endl;
 
 				std::fstream inputFile(filename.c_str());
 
@@ -631,6 +653,7 @@ export default class NewClass {
 				while (std::getline(inputFile, line)) { // Read line by line
 					editor.buffer.push_back(line);
 				}
+				editor.tokenize();
 
 				std::cout << editor.buffer.size() << std::endl;
 			}
