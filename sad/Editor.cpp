@@ -906,7 +906,9 @@ bool Editor::shouldDropIntoNewLine(size_t lineNo, size_t curPosX) {
 	return curPosX < this->buffer[lineNo].size() && indentClosers.find(this->buffer[lineNo][curPosX]) != indentClosers.end();
 }
 
-
+/*===========================
+* CODE FOLDING
+===========================*/
 void Editor::addFold(size_t start, size_t end) {
 	this->codeFolds.push_back({ start,end });
 	std::sort(this->codeFolds.begin(), this->codeFolds.end());
@@ -914,6 +916,18 @@ void Editor::addFold(size_t start, size_t end) {
 void Editor::removeFold(size_t idx) {
 	this->codeFolds.erase(this->codeFolds.begin() + idx);
 }
+
+size_t Editor::getScreenRow(size_t row) const {
+	size_t deduction = 0;
+	for (const CodeFold& cf : this->codeFolds) {
+		if (cf.first >= row) break;
+
+		deduction += cf.second - cf.first;
+	}
+	return row - deduction;
+}
+
+
 /*===========================
 * SYNTAX HIGHLIGHTING
 ===========================*/

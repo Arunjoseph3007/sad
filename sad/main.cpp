@@ -487,23 +487,31 @@ static void renderEditor(Editor& editor, ImDrawList* drawList, ImGuiStyle& style
 		if (editor.buffer[lineNo].size() > maxLineLength) maxLineLength = editor.buffer[lineNo].size();
 	}
 
-	// render tokens
-	for (const GrammarMatch& token : editor.tokens) {
-		if (token.matchedClass == "whitespace") continue;
+	// render lines
+	size_t tokenIdx = 0;
+	for (size_t lineNo = 0;lineNo < editor.buffer.size();lineNo++) {
+		float yp = p.y + lineNo * lineHeight;
+		while (tokenIdx < editor.tokens.size() && editor.tokens[tokenIdx].line == lineNo) {
+			GrammarMatch token = editor.tokens[tokenIdx];
+			float xp = p.x + lineNumberBarSize + token.start * charWidth;
 
-		float xp = p.x + lineNumberBarSize + token.start * charWidth;
-		float yp = p.y + token.line * lineHeight;
-		drawList->AddText(
-			ImVec2(xp, yp),
-			getTokenColor(token.matchedClass, SyntaxTheme),
-			editor.buffer[token.line].data() + token.start,
-			editor.buffer[token.line].data() + token.end
-		);
+			drawList->AddText(
+				ImVec2(xp, yp),
+				getTokenColor(token.matchedClass, SyntaxTheme),
+				editor.buffer[token.line].data() + token.start,
+				editor.buffer[token.line].data() + token.end
+			);
+			tokenIdx++;
+		}
 	}
 
 	// highlight folds
 	for (const CodeFold& codeFold : editor.codeFolds) {
 		markSelectionLine(codeFold.first, 0, 200);
+
+		float yp = p.y + editor.getScreenRow(codeFold.first) * lineHeight;
+		float xp = p.x + lineNumberBarSize - 20;
+		drawList->AddText(ImVec2(xp, yp), lineNoCol, "›");
 	}
 
 	ImVec2 scrollSpace(

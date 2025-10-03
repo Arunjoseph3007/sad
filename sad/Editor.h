@@ -102,7 +102,6 @@ public:
 public:
 	std::vector<Cursor> cursors;
 	TextBuffer buffer;
-	CodeFolds codeFolds;
 private:
 	void insertLine(size_t idx, const std::string& line);
 public:
@@ -135,8 +134,18 @@ public:
 	bool shouldAddIndent(size_t lineNo, size_t curPosX);
 	bool shouldDropIntoNewLine(size_t lineNo, size_t curPosX);
 
+	/*
+		Code Folding
+	*/
+public:
+	CodeFolds codeFolds;
+
 	void addFold(size_t start, size_t end);
 	void removeFold(size_t idx);
+
+	// return screen row for a specific row taking into account code folds
+	size_t getScreenRow(size_t row) const;
+
 	/*
 		Syntax highlighting stuff
 		this really should be here but we are using it just to move fast
