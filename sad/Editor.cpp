@@ -926,7 +926,13 @@ size_t Editor::getScreenRow(size_t row) const {
 	}
 	return row - deduction;
 }
-
+bool Editor::isRowFolded(size_t row) const {
+	for (const CodeFold& cf : this->codeFolds) {
+		if (row <= cf.first) return false;
+		if (row <= cf.second) return true;
+	}
+	return false;
+}
 
 /*===========================
 * SYNTAX HIGHLIGHTING

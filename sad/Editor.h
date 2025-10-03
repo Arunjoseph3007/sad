@@ -145,6 +145,7 @@ public:
 
 	// return screen row for a specific row taking into account code folds
 	size_t getScreenRow(size_t row) const;
+	bool isRowFolded(size_t row) const;
 
 	/*
 		Syntax highlighting stuff
