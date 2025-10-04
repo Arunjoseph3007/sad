@@ -136,6 +136,13 @@ void Editor::syncCusrorStart(size_t idx) {
 	this->cursors[idx].start.syncCursor(this->buffer);
 }
 
+void Editor::realignBy(CursorAlignFunc f) {
+	for (Cursor& curs : this->cursors) {
+		f(curs.start);
+		f(curs.end);
+	}
+}
+
 void Editor::collapseOverlappingCursosr() {
 	if (this->cursors.size() == 1) return;
 
@@ -333,37 +340,28 @@ void Editor::emptySelection(size_t idx) {
 		size_t noDelChars = selEnd.x - selStart.x;
 		this->buffer[selStart.y].erase(selStart.x, noDelChars);
 
-		for (Cursor& curs : this->cursors) {
-			if (curs.start.y == selEnd.y && curs.start.x > selEnd.x) {
-				curs.start.x -= noDelChars;
+		this->realignBy([&](IVec2& a) {
+			if (a.y == selEnd.y && a.x > selEnd.x) {
+				a.x -= noDelChars;
 			}
-			if (curs.end.y == selEnd.y && curs.end.x > selEnd.x) {
-				curs.end.x -= noDelChars;
-			}
-		}
+			});
 	}
 	else {
 		this->buffer[selStart.y].erase(selStart.x, this->buffer[selStart.y].size() - selStart.x);
 		this->buffer[selStart.y] += this->buffer[selEnd.y].substr(selEnd.x);
 		this->buffer.erase(this->buffer.begin() + selStart.y + 1, this->buffer.begin() + selEnd.y + 1);
 
-		for (Cursor& curs : this->cursors) {
-			if (curs.start.y == selEnd.y && curs.start.x > selEnd.x) {
-				curs.start.x += (selStart.x - selEnd.x);
+		this->realignBy([&](IVec2& a) {
+			if (a.y == selEnd.y && a.x > selEnd.x) {
+				a.x += (selStart.x - selEnd.x);
 			}
-			if (curs.end.y == selEnd.y && curs.end.x > selEnd.x) {
-				curs.end.x += (selStart.x - selEnd.x);
-			}
-		}
+			});
 
-		for (Cursor& curs : this->cursors) {
-			if (curs.start.y >= selEnd.y) {
-				curs.start.y -= (selEnd.y - selStart.y);
+		this->realignBy([&](IVec2& a) {
+			if (a.y >= selEnd.y) {
+				a.y -= (selEnd.y - selStart.y);
 			}
-			if (curs.end.y >= selEnd.y) {
-				curs.end.y -= (selEnd.y - selStart.y);
-			}
-		}
+			});
 	}
 
 	this->endTransaction();
@@ -374,14 +372,7 @@ void Editor::insertLine(size_t idx, const std::string& line) {
 
 	this->buffer.insert(this->buffer.begin() + idx, line);
 
-	for (Cursor& curs : this->cursors) {
-		if (curs.start.y >= idx) {
-			curs.start.y++;
-		}
-		if (curs.end.y >= idx) {
-			curs.end.y++;
-		}
-	}
+	this->realignBy([&](IVec2 a) { if (a.y >= idx) a.y++; });
 
 	this->endTransaction();
 }
@@ -404,15 +395,9 @@ void Editor::insertBefore(const char c, size_t idx) {
 	cursor.start.right(this->buffer);
 
 
-	// Realign cursors
-	for (Cursor& scurs : this->cursors) {
-		if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
-			scurs.start.x++;
-		}
-		if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
-			scurs.end.x++;
-		}
-	}
+	this->realignBy([&](IVec2 a) {
+		if (a.y == cursor.start.y && a.x > cursor.start.y) a.x++;
+		});
 
 	this->endTransaction();
 }
@@ -490,14 +475,11 @@ void Editor::insertAfter(const char c, size_t idx) {
 
 	// Realign cursors
 	Cursor& cursor = this->cursors[idx];
-	for (Cursor& scurs : this->cursors) {
-		if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
-			scurs.start.x++;
+	this->realignBy([&](IVec2& a) {
+		if (a.y == cursor.start.y && a.x > cursor.start.x) {
+			a.x++;
 		}
-		if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
-			scurs.end.x++;
-		}
-	}
+		});
 	this->endTransaction();
 }
 void Editor::insertAfter(const char c) {
@@ -577,14 +559,11 @@ bool Editor::backspace(size_t idx) {
 		this->buffer[gPos.y].erase(gPos.x - 1, 1);
 
 		// Realign cursors
-		for (Cursor& scurs : this->cursors) {
-			if (scurs.start.y == cursor.start.y && scurs.start.x > cursor.start.x) {
-				scurs.start.x--;
+		realignBy([&](IVec2& a) {
+			if (a.y == cursor.start.y && a.x > cursor.start.x) {
+				a.x--;
 			}
-			if (scurs.end.y == cursor.start.y && scurs.end.x > cursor.start.x) {
-				scurs.end.x--;
-			}
-		}
+			});
 
 		this->endTransaction();
 		return true;
@@ -594,27 +573,21 @@ bool Editor::backspace(size_t idx) {
 
 		size_t prevLineLen = this->buffer[cursor.end.y - 1].size();
 		// Realign cursors in this line
-		for (Cursor& scurs : this->cursors) {
-			if (scurs.start.y == cursor.start.y) {
-				scurs.start.x += prevLineLen;
+		realignBy([&](IVec2& a) {
+			if (a.y == cursor.start.y) {
+				a.x += prevLineLen;
 			}
-			if (scurs.end.y == cursor.start.y) {
-				scurs.end.x += prevLineLen;
-			}
-		}
+			});
 
 		// append to previous line, and remove it
 		this->buffer[cursor.end.y - 1] += this->buffer[cursor.end.y];
 		this->buffer.erase(this->buffer.begin() + cursor.end.y);
 
-		for (Cursor& scurs : this->cursors) {
-			if (scurs.start.y >= cursor.start.y) {
-				scurs.start.y--;
+		realignBy([&](IVec2& a) {
+			if (a.y >= cursor.start.y) {
+				a.y--;
 			}
-			if (scurs.end.y >= cursor.start.y) {
-				scurs.end.y--;
-			}
-		}
+			});
 
 		this->endTransaction();
 		return true;

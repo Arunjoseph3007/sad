@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <utility>
+#include <functional>
 #include "Cursor.h"
 #include "Edit.h"
 #include "Grammar.h"
@@ -9,6 +10,9 @@ const int MAX_UNDO_HISTORY_SIZE = 100;
 
 typedef std::pair<size_t, size_t> CodeFold;
 typedef std::vector<CodeFold> CodeFolds;
+typedef std::function<void(IVec2&)> CursorAlignFunc;
+
+#define ALIGN_CURS(cursors, anchor) for(Cursor& __curs: (cursors)) for(const IVec2& anchor: {__curs.start, __curs.end})
 
 class Editor {
 public:
@@ -63,6 +67,7 @@ public:
 	void syncCusrorEnd(size_t idx);
 	void syncCusrorStart(size_t idx);
 
+	void realignBy(CursorAlignFunc f);
 	void collapseOverlappingCursosr();
 
 	bool up();
