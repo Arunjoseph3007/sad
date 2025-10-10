@@ -3,6 +3,8 @@
 #include <vector>
 
 typedef std::vector<std::string> TextBuffer;
+typedef std::pair<size_t, size_t> CodeFold;
+typedef std::vector<CodeFold> CodeFolds;
 
 TextBuffer splitString(const std::string& text, const char& delimiter = '\n');
 

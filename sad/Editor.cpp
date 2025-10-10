@@ -167,8 +167,8 @@ bool Editor::up() {
 			curs.collapseToSelectionStart(this->buffer);
 		}
 		else {
-			curs.end.up(buffer);
-			curs.start.up(buffer);
+			curs.end.up(buffer, codeFolds);
+			curs.start.up(buffer, codeFolds);
 		}
 	}
 
@@ -183,8 +183,8 @@ bool Editor::down(size_t idx) {
 
 	}
 	else {
-		this->cursors[idx].end.down(buffer);
-		this->cursors[idx].start.down(buffer);
+		this->cursors[idx].end.down(buffer, codeFolds);
+		this->cursors[idx].start.down(buffer, codeFolds);
 	}
 	return true;
 }
@@ -203,8 +203,8 @@ bool Editor::left(size_t idx) {
 		this->cursors[idx].collapseToSelectionStart(this->buffer);
 	}
 	else {
-		this->cursors[idx].end.left(buffer);
-		this->cursors[idx].start.left(buffer);
+		this->cursors[idx].end.left(buffer, codeFolds);
+		this->cursors[idx].start.left(buffer, codeFolds);
 	}
 	return true;
 }
@@ -223,8 +223,8 @@ bool Editor::right(size_t idx) {
 		this->cursors[idx].collapseToSelectionEnd(this->buffer);
 	}
 	else {
-		this->cursors[idx].end.right(buffer);
-		this->cursors[idx].start.right(buffer);
+		this->cursors[idx].end.right(buffer, codeFolds);
+		this->cursors[idx].start.right(buffer, codeFolds);
 	}
 	return true;
 }
@@ -245,7 +245,7 @@ void Editor::leftWord() {
 			curs.collapseToSelectionStart(this->buffer);
 		}
 
-		if (!curs.left(this->buffer)) continue;
+		if (!curs.left(this->buffer, codeFolds)) continue;
 
 		while (getCharType(curs.start.getPrev(this->buffer)) == CharType::Alphabet) {
 			if (!this->left(ci)) break;
@@ -260,7 +260,7 @@ void Editor::rightWord() {
 			curs.collapseToSelectionEnd(this->buffer);
 		}
 
-		if (!curs.right(this->buffer)) continue;
+		if (!curs.right(this->buffer, codeFolds)) continue;
 
 		while (getCharType(curs.start.getNext(this->buffer)) == CharType::Alphabet) {
 			if (!this->right(ci)) break;
@@ -270,28 +270,28 @@ void Editor::rightWord() {
 
 void Editor::selectUp() {
 	for (Cursor& curs : this->cursors) {
-		curs.end.up(this->buffer);
+		curs.end.up(this->buffer, codeFolds);
 	}
 
 	this->collapseOverlappingCursosr();
 }
 void Editor::selectDown() {
 	for (Cursor& curs : this->cursors) {
-		curs.end.down(this->buffer);
+		curs.end.down(this->buffer, codeFolds);
 	}
 
 	this->collapseOverlappingCursosr();
 }
 void Editor::selectLeft() {
 	for (Cursor& curs : this->cursors) {
-		curs.end.left(this->buffer);
+		curs.end.left(this->buffer, codeFolds);
 	}
 
 	this->collapseOverlappingCursosr();
 }
 void Editor::selectRight() {
 	for (Cursor& curs : this->cursors) {
-		curs.end.right(this->buffer);
+		curs.end.right(this->buffer, codeFolds);
 	}
 
 	this->collapseOverlappingCursosr();
@@ -364,6 +364,13 @@ void Editor::emptySelection(size_t idx) {
 				curs.end.y -= (selEnd.y - selStart.y);
 			}
 		}
+
+		for (CodeFold& cf : this->codeFolds) {
+			if (cf.first >= selEnd.y) {
+				cf.first -= (selEnd.y - selStart.y);
+				cf.second -= (selEnd.y - selStart.y);
+			}
+		}
 	}
 
 	this->endTransaction();
@@ -380,6 +387,13 @@ void Editor::insertLine(size_t idx, const std::string& line) {
 		}
 		if (curs.end.y >= idx) {
 			curs.end.y++;
+		}
+	}
+
+	for (CodeFold& cf : this->codeFolds) {
+		if (cf.first >= idx) {
+			cf.first++;
+			cf.second++;
 		}
 	}
 
@@ -400,8 +414,8 @@ void Editor::insertBefore(const char c, size_t idx) {
 
 	this->buffer[gPos.y].insert(gPos.x, 1, c);
 
-	cursor.end.right(this->buffer);
-	cursor.start.right(this->buffer);
+	cursor.end.right(this->buffer, codeFolds);
+	cursor.start.right(this->buffer, codeFolds);
 
 
 	// Realign cursors
@@ -616,6 +630,13 @@ bool Editor::backspace(size_t idx) {
 			}
 		}
 
+		for (CodeFold& cf : this->codeFolds) {
+			if (cf.first >= cursor.start.y) {
+				cf.first--;
+				cf.second--;
+			}
+		}
+
 		this->endTransaction();
 		return true;
 	}
@@ -711,6 +732,13 @@ bool Editor::del(size_t idx) {
 			}
 		}
 
+		for (CodeFold& cf : this->codeFolds) {
+			if (cf.first > cursor.start.y) {
+				cf.first--;
+				cf.second--;
+			}
+		}
+
 		this->endTransaction();
 		return true;
 	}
@@ -774,6 +802,14 @@ void Editor::enter(size_t idx) {
 		}
 		if (scurs.end.y > gPos.y) {
 			scurs.end.y++;
+		}
+	}
+
+	// realign folds
+	for (CodeFold& cf : this->codeFolds) {
+		if (cf.first > gPos.y) {
+			cf.first++;
+			cf.second++;
 		}
 	}
 

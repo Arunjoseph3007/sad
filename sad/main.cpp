@@ -20,6 +20,13 @@
 #include <chrono>
 #include <unordered_map>
 
+// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to maximize ease of testing and compatibility with old VS compilers.
+// To link with VS2010-era libraries, VS2015+ requires linking with legacy_stdio_definitions.lib, which we do using this pragma.
+// Your own project should not be affected, as you are likely to link with a newer binary of GLFW that is adequate for your version of Visual Studio.
+#if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
+#pragma comment(lib, "legacy_stdio_definitions")
+#endif
+
 static void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
@@ -171,10 +178,10 @@ static bool moveRightWord(GLFWwindow* window, Editor& e) {
 static bool selectLeftWord(GLFWwindow* window, Editor& e) {
 	for (size_t ci = 0;ci < e.cursors.size();ci++) {
 		Cursor& curs = e.cursors[ci];
-		if (!curs.end.left(e.buffer)) continue;
+		if (!curs.end.left(e.buffer, e.codeFolds)) continue;
 
 		while (getCharType(curs.end.getPrev(e.buffer)) == CharType::Alphabet) {
-			if (!curs.end.left(e.buffer)) break;
+			if (!curs.end.left(e.buffer, e.codeFolds)) break;
 		}
 	}
 	return true;
@@ -182,10 +189,10 @@ static bool selectLeftWord(GLFWwindow* window, Editor& e) {
 static bool selectRightWord(GLFWwindow* window, Editor& e) {
 	for (size_t ci = 0;ci < e.cursors.size();ci++) {
 		Cursor& curs = e.cursors[ci];
-		if (!curs.end.right(e.buffer)) continue;
+		if (!curs.end.right(e.buffer, e.codeFolds)) continue;
 
 		while (getCharType(curs.end.getNext(e.buffer)) == CharType::Alphabet) {
-			if (!curs.end.right(e.buffer)) break;
+			if (!curs.end.right(e.buffer, e.codeFolds)) break;
 		}
 	}
 
@@ -241,7 +248,7 @@ static bool copyLineDown(GLFWwindow* window, Editor& e) {
 	e.startTransaction();
 
 	size_t y = e.cursors[0].selectionStart(e.buffer).y;
-	e.buffer.insert(e.buffer.begin() + e.cursors[0].end.y, e.buffer[y]);
+	e.insertLine(e.cursors[0].end.y, e.buffer[y]);
 	e.down();
 
 	e.endTransaction();
@@ -253,7 +260,7 @@ static bool copyLineUp(GLFWwindow* window, Editor& e) {
 	e.startTransaction();
 
 	size_t y = e.cursors[0].selectionStart(e.buffer).y;
-	e.buffer.insert(e.buffer.begin() + e.cursors[0].end.y, e.buffer[y]);
+	e.insertLine(e.cursors[0].end.y, e.buffer[y]);
 
 	e.endTransaction();
 	return true;
@@ -419,7 +426,11 @@ static bool addFold(Editor& e, CommandArgs args) {
 	IM_ASSERT(start >= 1 && end >= 1);
 	// -1 for accounting zero indexing
 	e.addFold((size_t)(start - 1), (size_t)(end - 1));
-	return false;
+	return true;
+}
+static bool unFoldAll(Editor& e, CommandArgs args) {
+	e.codeFolds.clear();
+	return true;
 }
 
 static void SetupTheme() {}
@@ -595,7 +606,8 @@ int main(int, char**) {
 	commandCenter.addCommand("insert", CMD_DECL(e){ e.insertBefore(args[0]); return true; }, 1);
 	commandCenter.addCommand("find", findWord, 1);
 	commandCenter.addCommand("replace", replaceWord, 2);
-	commandCenter.addCommand("addFold", addFold, 2);
+	commandCenter.addCommand("fold", addFold, 2);
+	commandCenter.addCommand("unFoldAll", unFoldAll);
 
 	Grammar grammar = simpleJsGrammar();
 	editor.loadGrammar(grammar);

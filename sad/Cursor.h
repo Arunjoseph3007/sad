@@ -25,10 +25,10 @@ public:
 	char getPrev(const TextBuffer& buffer) const;
 	char getNext(const TextBuffer& buffer) const;
 
-	bool up(const TextBuffer& buffer);
-	bool down(const TextBuffer& buffer);
-	bool left(const TextBuffer& buffer);
-	bool right(const TextBuffer& buffer);
+	bool up(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	bool down(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	bool left(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	bool right(const TextBuffer& buffer, const CodeFolds& codeFolds);
 };
 
 struct Cursor {
@@ -43,10 +43,10 @@ public:
 	IVec2 selectionStart(const TextBuffer& buffer) const;
 	IVec2 selectionEnd(const TextBuffer& buffer) const;
 
-	bool up(const TextBuffer& buffer);
-	bool down(const TextBuffer& buffer);
-	bool left(const TextBuffer& buffer);
-	bool right(const TextBuffer& buffer);
+	bool up(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	bool down(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	bool left(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	bool right(const TextBuffer& buffer, const CodeFolds& codeFolds);
 
 	void collapseToSelectionStart(const TextBuffer& buffer);
 	void collapseToSelectionEnd(const TextBuffer& buffer);

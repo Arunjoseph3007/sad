@@ -7,9 +7,6 @@
 
 const int MAX_UNDO_HISTORY_SIZE = 100;
 
-typedef std::pair<size_t, size_t> CodeFold;
-typedef std::vector<CodeFold> CodeFolds;
-
 class Editor {
 public:
 	Editor();
@@ -102,9 +99,8 @@ public:
 public:
 	std::vector<Cursor> cursors;
 	TextBuffer buffer;
-private:
-	void insertLine(size_t idx, const std::string& line);
 public:
+	void insertLine(size_t idx, const std::string& line);
 	void emptySelection(size_t idx);
 
 	void insertBefore(const char c, size_t idx);

@@ -68,10 +68,18 @@ char IVec2::getNext(const TextBuffer& buffer) const {
 	return buffer[y][x];
 }
 
+static inline bool compFolds(const CodeFold& a, const CodeFold& b) { return a.second < b.second; }
 
-bool IVec2::up(const TextBuffer& buffer) {
+bool IVec2::up(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 	if (this->y > 0) {
 		this->y--;
+
+		// Check for fold skips
+		auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
+		if (it != codeFolds.end() && (*it).first <= this->y) {
+			this->y = it->first;
+		}
+
 		return true;
 	}
 	else if (this->x != 0) {
@@ -81,9 +89,18 @@ bool IVec2::up(const TextBuffer& buffer) {
 	return true;
 }
 
-bool IVec2::down(const TextBuffer& buffer) {
+bool IVec2::down(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 	if (this->y < buffer.size() - 1) {
 		this->y++;
+
+		// Check for fold skips
+		auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
+		if (it != codeFolds.end() && (*it).first < this->y) {
+			this->y = it->second;
+
+			if (this->y < buffer.size() - 1) this->y++;
+		}
+
 		return true;
 	}
 	else if (this->x != buffer[buffer.size() - 1].size()) {
@@ -93,7 +110,7 @@ bool IVec2::down(const TextBuffer& buffer) {
 	return false;
 }
 
-bool IVec2::left(const TextBuffer& buffer) {
+bool IVec2::left(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 	this->syncCursor(buffer);
 
 	if (this->x > 0) {
@@ -108,7 +125,7 @@ bool IVec2::left(const TextBuffer& buffer) {
 	return false;
 }
 
-bool IVec2::right(const TextBuffer& buffer) {
+bool IVec2::right(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 	this->syncCursor(buffer);
 
 	if (this->x < buffer[this->y].size()) {
@@ -159,17 +176,17 @@ IVec2 Cursor::selectionEnd(const TextBuffer& buffer) const {
 	return selStart.y > selEnd.y ? selStart : selEnd;
 }
 
-bool Cursor::up(const TextBuffer& buffer) {
-	return this->start.up(buffer) && this->end.up(buffer);
+bool Cursor::up(const TextBuffer& buffer, const CodeFolds& codeFolds) {
+	return this->start.up(buffer, codeFolds) && this->end.up(buffer, codeFolds);
 }
-bool Cursor::down(const TextBuffer& buffer) {
-	return this->start.down(buffer) && this->end.down(buffer);
+bool Cursor::down(const TextBuffer& buffer, const CodeFolds& codeFolds) {
+	return this->start.down(buffer, codeFolds) && this->end.down(buffer, codeFolds);
 }
-bool Cursor::left(const TextBuffer& buffer) {
-	return this->start.left(buffer) && this->end.left(buffer);
+bool Cursor::left(const TextBuffer& buffer, const CodeFolds& codeFolds) {
+	return this->start.left(buffer, codeFolds) && this->end.left(buffer, codeFolds);
 }
-bool Cursor::right(const TextBuffer& buffer) {
-	return this->start.right(buffer) && this->end.right(buffer);
+bool Cursor::right(const TextBuffer& buffer, const CodeFolds& codeFolds) {
+	return this->start.right(buffer, codeFolds) && this->end.right(buffer, codeFolds);
 }
 
 void Cursor::collapseToSelectionStart(const TextBuffer& buffer) {
