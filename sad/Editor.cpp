@@ -373,6 +373,8 @@ void Editor::emptySelection(size_t idx) {
 		}
 	}
 
+	// TODO remove if any fold exist
+
 	this->endTransaction();
 }
 

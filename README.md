@@ -35,9 +35,7 @@ We are at a very basic stage so lower you expectations
 - auto completions
 - LSP integration
 - Code folding
-  - Handle up/down/left/right near folds
-  - Handle backspace at fold end/ del at fold start
-  - Handle insertLine/enter/lineDelete before codefolds
+  - Handle janks
 - modding using lua
 - respect capslock/numlock
 

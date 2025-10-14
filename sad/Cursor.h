@@ -24,6 +24,9 @@ public:
 
 	char getPrev(const TextBuffer& buffer) const;
 	char getNext(const TextBuffer& buffer) const;
+	
+	void upSkipFold(const TextBuffer& buffer, const CodeFolds& codeFolds);
+	void downSkipFold(const TextBuffer& buffer, const CodeFolds& codeFolds);
 
 	bool up(const TextBuffer& buffer, const CodeFolds& codeFolds);
 	bool down(const TextBuffer& buffer, const CodeFolds& codeFolds);

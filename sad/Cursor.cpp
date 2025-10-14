@@ -30,6 +30,7 @@ bool IVec2::operator>(const IVec2& that) const {
 
 	return this->x > that.x;
 }
+
 bool IVec2::operator<(const IVec2& that) const {
 	if (this->y < that.y) return true;
 	if (this->y > that.y) return false;
@@ -68,18 +69,33 @@ char IVec2::getNext(const TextBuffer& buffer) const {
 	return buffer[y][x];
 }
 
-// TODO there is some repetition in up/left , down/right we can probably extract to private functions like upSkipFold/downSkipFold
 static inline bool compFolds(const CodeFold& a, const CodeFold& b) { return a.second < b.second; }
+
+void IVec2::upSkipFold(const TextBuffer& buffer, const CodeFolds& codeFolds) {
+	this->y--;
+
+	// Check for fold skips
+	auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
+	if (it != codeFolds.end() && (*it).first <= this->y) {
+		this->y = it->first;
+	}
+}
+void IVec2::downSkipFold(const TextBuffer& buffer, const CodeFolds& codeFolds) {
+	this->y++;
+
+	// Check for fold skips
+	auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
+	if (it != codeFolds.end() && (*it).first < this->y) {
+		this->y = it->second;
+
+		if (this->y < buffer.size() - 1) this->y++;
+	}
+}
+
 
 bool IVec2::up(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 	if (this->y > 0) {
-		this->y--;
-
-		// Check for fold skips
-		auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
-		if (it != codeFolds.end() && (*it).first <= this->y) {
-			this->y = it->first;
-		}
+		upSkipFold(buffer, codeFolds);
 
 		return true;
 	}
@@ -92,15 +108,7 @@ bool IVec2::up(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 
 bool IVec2::down(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 	if (this->y < buffer.size() - 1) {
-		this->y++;
-
-		// Check for fold skips
-		auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
-		if (it != codeFolds.end() && (*it).first < this->y) {
-			this->y = it->second;
-
-			if (this->y < buffer.size() - 1) this->y++;
-		}
+		downSkipFold(buffer, codeFolds);
 
 		return true;
 	}
@@ -119,13 +127,7 @@ bool IVec2::left(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 		return true;
 	}
 	else if (this->y > 0) {
-		this->y--;
-
-		// Check for fold skips
-		auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
-		if (it != codeFolds.end() && (*it).first <= this->y) {
-			this->y = it->first;
-		}
+		upSkipFold(buffer, codeFolds);
 
 		this->x = buffer[this->y].size();
 		return true;
@@ -141,17 +143,9 @@ bool IVec2::right(const TextBuffer& buffer, const CodeFolds& codeFolds) {
 		return true;
 	}
 	else if (this->y < buffer.size() - 1) {
+		downSkipFold(buffer, codeFolds);
+
 		this->x = 0;
-		this->y++;
-
-		// Check for fold skips
-		auto it = std::lower_bound(codeFolds.begin(), codeFolds.end(), std::make_pair(0, this->y), compFolds);
-		if (it != codeFolds.end() && (*it).first < this->y) {
-			this->y = it->second;
-
-			if (this->y < buffer.size() - 1) this->y++;
-		}
-
 		return true;
 	}
 	return false;
